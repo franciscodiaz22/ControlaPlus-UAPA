@@ -32,6 +32,9 @@ export class OfflineStorageService {
   /** Promesa que se resuelve cuando el motor de almacenamiento está listo. */
   private readonly listo: Promise<void>;
 
+  /** Última escritura encolada; cada escritura nueva se encadena a esta. */
+  private cola: Promise<void> = Promise.resolve();
+
   constructor(private readonly ionicStorage: Storage) {
     this.listo = this.inicializar();
   }
@@ -61,24 +64,35 @@ export class OfflineStorageService {
 
   /** Inserta al principio de la lista y persiste. */
   async agregar(mov: Movimiento): Promise<void> {
-    await this.listo;
-    await this.persistir([mov, ...this.movimientosSubject.value]);
+    await this.escribir((lista) => [mov, ...lista]);
   }
 
   /** Marca como sincronizados los ids indicados (tras un envío exitoso). */
   async marcarSincronizados(ids: string[]): Promise<void> {
-    await this.listo;
     const conjunto = new Set(ids);
-    const actualizados = this.movimientosSubject.value.map((m) =>
-      conjunto.has(m.id) ? { ...m, estado: 'sincronizado' as const } : m,
+    await this.escribir((lista) =>
+      lista.map((m) => (conjunto.has(m.id) ? { ...m, estado: 'sincronizado' as const } : m)),
     );
-    await this.persistir(actualizados);
   }
 
   /** Borra todo (útil en pruebas). */
   async limpiar(): Promise<void> {
-    await this.listo;
-    await this.persistir([]);
+    await this.escribir(() => []);
+  }
+
+  /**
+   * Encola una escritura: espera a que termine la anterior y calcula la lista
+   * nueva en su turno, a partir del estado ya actualizado. Así dos escrituras
+   * solapadas (p. ej. registrar mientras termina una sincronización) no se
+   * pisan. Un fallo se devuelve a quien llamó, pero no detiene la cola.
+   */
+  private escribir(transformar: (lista: Movimiento[]) => Movimiento[]): Promise<void> {
+    const turno = this.cola.then(async () => {
+      await this.listo;
+      await this.persistir(transformar(this.movimientosSubject.value));
+    });
+    this.cola = turno.catch(() => undefined);
+    return turno;
   }
 
   private async persistir(lista: Movimiento[]): Promise<void> {

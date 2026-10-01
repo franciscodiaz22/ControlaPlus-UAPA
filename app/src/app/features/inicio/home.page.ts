@@ -60,6 +60,8 @@ export class HomePage {
 
   readonly lista$ = this.movimientos.movimientos$;
   readonly balance$ = this.movimientos.balance$;
+  /** Cuántos movimientos esperan sincronización (se actualiza solo). */
+  readonly pendientes$ = this.movimientos.pendientes$;
   readonly etiquetaPendiente = MENSAJES.etiquetaPendiente;
 
   constructor() {
@@ -92,6 +94,13 @@ export class HomePage {
     }
     void this.movimientos.registrar({ concepto, monto, tipo });
     return true;
+  }
+
+  /** Texto del contador de pendientes, en singular o plural. */
+  textoPendientes(n: number): string {
+    return n === 1
+      ? '⏳ 1 movimiento pendiente de sincronizar'
+      : `⏳ ${n} movimientos pendientes de sincronizar`;
   }
 
   trackById(_indice: number, m: Movimiento): string {

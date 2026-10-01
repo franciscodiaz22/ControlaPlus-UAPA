@@ -63,15 +63,24 @@ export class NetworkService implements OnDestroy {
     }
     this.inicializado = true;
 
-    // 1) Estado inicial
-    const status = await Network.getStatus();
-    this.actualizar(status);
+    // 1) Estado inicial. Si el plugin falla se conserva navigator.onLine y se
+    //    continúa: el listener debe registrarse igualmente.
+    try {
+      const status = await Network.getStatus();
+      this.actualizar(status);
+    } catch (err) {
+      console.warn('NetworkService: no se pudo leer el estado inicial; se usa navigator.onLine →', err);
+    }
 
     // 2) Cambios en tiempo real (modo avión, pérdida de WiFi, datos móviles...)
-    this.listener = await Network.addListener('networkStatusChange', (nuevoEstado) => {
-      // El evento llega desde el puente nativo, fuera de la zona de Angular.
-      this.zone.run(() => this.actualizar(nuevoEstado));
-    });
+    try {
+      this.listener = await Network.addListener('networkStatusChange', (nuevoEstado) => {
+        // El evento llega desde el puente nativo, fuera de la zona de Angular.
+        this.zone.run(() => this.actualizar(nuevoEstado));
+      });
+    } catch (err) {
+      console.warn('NetworkService: no se pudo escuchar los cambios de red →', err);
+    }
   }
 
   /** Lectura síncrona del último estado conocido. */

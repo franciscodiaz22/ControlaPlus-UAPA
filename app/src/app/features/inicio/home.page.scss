@@ -65,6 +65,13 @@ ion-content {
     font-size: 11px;
     color: $azul;
   }
+  /* Contador de pendientes: mismo estilo ámbar que .tag-pendiente */
+  .pendientes {
+    margin: 8px 0 0;
+    font-family: $mono;
+    font-size: 11px;
+    color: $ambar;
+  }
 }
 
 .seccion {

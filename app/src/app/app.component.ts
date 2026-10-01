@@ -5,6 +5,8 @@
  *  - SyncService se inyecta aquí para que quede instanciado desde el inicio y
  *    su suscripción a offline → online esté activa aunque el usuario no haya
  *    abierto todavía ninguna pantalla que lo use.
+ *  - Al terminar init() se sincronizan los pendientes de sesiones anteriores
+ *    si la app arranca ya con conexión (no hay transición offline → online).
  */
 import { Component, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
@@ -23,7 +25,8 @@ export class AppComponent {
   private readonly sync = inject(SyncService);
 
   constructor() {
-    void this.network.init();
-    void this.sync; // evita el aviso de "propiedad no usada"
+    // Con el estado real de la red ya conocido, se envían los pendientes que
+    // quedaron de sesiones anteriores (sin red o sin pendientes no hace nada).
+    void this.network.init().then(() => this.sync.sincronizar('arranque'));
   }
 }
