@@ -67,7 +67,11 @@ export class MovimientosService {
       return movimiento;
     }
 
-    // 3) Con conexión: enviar y marcar como sincronizado
+    // 3) Con conexión: enviar y marcar como sincronizado.
+    //    Si una sincronización ya lo está enviando, no se envía dos veces.
+    if (!this.sync.reservarEnvio([movimiento.id]).length) {
+      return movimiento;
+    }
     try {
       await this.api.enviarMovimientos([movimiento]);
       await this.storage.marcarSincronizados([movimiento.id]);
@@ -76,6 +80,8 @@ export class MovimientosService {
       console.warn('Fallo al enviar estando en línea; queda pendiente →', err);
       await this.toast(MENSAJES.toastSyncError, 'ambar');
       this.sync.programarReintento();
+    } finally {
+      this.sync.liberarEnvio([movimiento.id]);
     }
     return movimiento;
   }

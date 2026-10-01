@@ -13,6 +13,10 @@
     <p class="label">Balance disponible</p>
     <p class="cifra">{{ balance$ | async | currency:'DOP':'RD$ ':'1.2-2' }}</p>
     <p class="meta">Incluye los movimientos guardados en este teléfono</p>
+    <!-- Contador de movimientos pendientes de sincronizar (no se muestra si es 0) -->
+    @if (pendientes$ | async; as n) {
+      <p class="pendientes" role="status" aria-live="polite">{{ textoPendientes(n) }}</p>
+    }
   </section>
 
   <h2 class="seccion">Movimientos recientes</h2>
