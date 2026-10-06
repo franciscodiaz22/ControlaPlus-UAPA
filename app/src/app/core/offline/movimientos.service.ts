@@ -58,6 +58,7 @@ export class MovimientosService {
       ubicacion: datos.ubicacion,
       estado: 'pendiente',
     };
+    
 
     // 1) Siempre primero en el dispositivo (offline-first)
     await this.storage.agregar(movimiento);
@@ -68,7 +69,7 @@ export class MovimientosService {
       await this.toast(MENSAJES.toastGuardadoOffline, 'oscuro');
       return movimiento;
     }
-
+    
     // 3) Con conexión: enviar y marcar como sincronizado
     try {
       await this.api.enviarMovimientos([movimiento]);
@@ -83,6 +84,14 @@ export class MovimientosService {
       this.sync.programarReintento();
     }
     return movimiento;
+  }
+    /** Elimina un movimiento del almacenamiento local por su id. */
+  async eliminar(id: string): Promise<void> {
+    await this.storage.eliminar(id);
+  }
+    /** Actualiza un movimiento existente en el almacenamiento local. */
+  async actualizar(movimiento: Movimiento): Promise<void> {
+    await this.storage.actualizar(movimiento);
   }
 
   private async toast(message: string, variante: 'cian' | 'ambar' | 'oscuro'): Promise<void> {

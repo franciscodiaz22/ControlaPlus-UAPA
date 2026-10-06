@@ -58,9 +58,31 @@
         <!-- 2.3 Etiqueta por movimiento creado sin conexión -->
         <p class="tag-pendiente" *ngIf="m.estado === 'pendiente'">{{ etiquetaPendiente }}</p>
       </ion-label>
-      <ion-note slot="end" class="monto">
+            <ion-note slot="end" class="monto">
         {{ m.tipo === 'ingreso' ? '+' : '-' }} {{ m.monto | currency:'DOP':'RD$ ':'1.2-2' }}
       </ion-note>
+      <ion-note slot="end" class="monto">
+  {{ m.tipo === 'ingreso' ? '+' : '-' }} {{ m.monto | currency:'DOP':'RD$ ':'1.2-2' }}
+</ion-note>
+
+<ion-button
+  slot="end"
+  fill="clear"
+  aria-label="Editar movimiento"
+  (click)="editarMovimiento(m)"
+>
+  Editar
+</ion-button>
+
+      <ion-button
+        slot="end"
+        fill="clear"
+        color="danger"
+        aria-label="Eliminar movimiento"
+        (click)="eliminarMovimiento(m.id)"
+      >
+        Eliminar
+      </ion-button>
     </ion-item>
   </ion-list>
 
