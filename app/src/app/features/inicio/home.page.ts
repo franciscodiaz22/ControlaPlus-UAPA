@@ -154,6 +154,58 @@ export class HomePage {
     const toast = await this.toastCtrl.create({ message, duration: 3000, position: 'bottom' });
     await toast.present();
   }
+    /** Elimina un movimiento por su id mediante el servicio de movimientos. */
+  async eliminarMovimiento(id: string): Promise<void> {
+    await this.movimientos.eliminar(id);
+  }
+    /** Edita los datos de un movimiento existente. */
+  async editarMovimiento(movimiento: Movimiento): Promise<void> {
+    const alerta = await this.alertCtrl.create({
+      header: 'Editar movimiento',
+      inputs: [
+        {
+          name: 'concepto',
+          type: 'text',
+          value: movimiento.concepto,
+          placeholder: 'Concepto',
+        },
+        {
+          name: 'monto',
+          type: 'number',
+          value: movimiento.monto,
+          placeholder: 'Monto en RD$',
+          min: 1,
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        },
+        {
+          text: 'Guardar',
+          handler: (datos) => {
+            const concepto = (datos.concepto ?? '').trim();
+            const monto = Number(datos.monto);
+
+            if (!concepto || !(monto > 0)) {
+              return false;
+            }
+
+            void this.movimientos.actualizar({
+              ...movimiento,
+              concepto,
+              monto,
+            });
+
+            return true;
+          },
+        },
+      ],
+    });
+
+    await alerta.present();
+  }
 
   trackById(_indice: number, m: Movimiento): string {
     return m.id;
