@@ -26,6 +26,9 @@ export class OfflineStorageService {
   /** Copia en memoria para lecturas síncronas y para alimentar la vista. */
   private readonly movimientosSubject = new BehaviorSubject<Movimiento[]>([]);
 
+  /** Última lista persistida para evitar escrituras redundantes y spam del log. */
+  private ultimaListaPersistida: Movimiento[] | null = null;
+
   /** La vista se suscribe aquí; emite cada vez que cambia la lista. */
   readonly movimientos$: Observable<Movimiento[]> = this.movimientosSubject.asObservable();
 
@@ -42,7 +45,8 @@ export class OfflineStorageService {
     const guardados = (await this.storage.get(CLAVE_MOVIMIENTOS)) as Movimiento[] | null;
 
     if (guardados && guardados.length) {
-      this.movimientosSubject.next(guardados);
+      this.ultimaListaPersistida = [...guardados];
+      this.movimientosSubject.next(this.ultimaListaPersistida);
     } else if (environment.cargarDatosDemo) {
       await this.persistir(this.datosDemo());
     }
@@ -82,8 +86,17 @@ export class OfflineStorageService {
   }
 
   private async persistir(lista: Movimiento[]): Promise<void> {
-    await this.storage!.set(CLAVE_MOVIMIENTOS, lista);
-    this.movimientosSubject.next(lista);
+    const siguiente = lista.map((m) => ({ ...m }));
+    const previo = this.ultimaListaPersistida ? JSON.stringify(this.ultimaListaPersistida) : null;
+    const actual = JSON.stringify(siguiente);
+
+    if (previo === actual) {
+      return;
+    }
+
+    await this.storage!.set(CLAVE_MOVIMIENTOS, siguiente);
+    this.ultimaListaPersistida = siguiente;
+    this.movimientosSubject.next(siguiente);
   }
 
   /** Movimientos de ejemplo para la demostración (misma data del prototipo). */

@@ -26,6 +26,9 @@ export class OfflineStorageService {
   /** Copia en memoria para lecturas síncronas y para alimentar la vista. */
   private readonly movimientosSubject = new BehaviorSubject<Movimiento[]>([]);
 
+  /** Última lista persistida para evitar escrituras redundantes y spam del log. */
+  private ultimaListaPersistida: Movimiento[] | null = null;
+
   /** La vista se suscribe aquí; emite cada vez que cambia la lista. */
   readonly movimientos$: Observable<Movimiento[]> = this.movimientosSubject.asObservable();
 
@@ -40,9 +43,10 @@ export class OfflineStorageService {
     // create() abre (o crea) la base de datos; es obligatorio antes de usarla.
     this.storage = await this.ionicStorage.create();
     const guardados = (await this.storage.get(CLAVE_MOVIMIENTOS)) as Movimiento[] | null;
-
+    
     if (guardados && guardados.length) {
-      this.movimientosSubject.next(guardados);
+      this.ultimaListaPersistida = [...guardados];
+      this.movimientosSubject.next(this.ultimaListaPersistida);
     } else if (environment.cargarDatosDemo) {
       await this.persistir(this.datosDemo());
     }
@@ -64,6 +68,26 @@ export class OfflineStorageService {
     await this.listo;
     await this.persistir([mov, ...this.movimientosSubject.value]);
   }
+    /** Elimina un movimiento por su id y persiste la lista actualizada. */
+  async eliminar(id: string): Promise<void> {
+    await this.listo;
+
+    const actualizados = this.movimientosSubject.value.filter(
+      (m) => m.id !== id,
+    );
+
+    await this.persistir(actualizados);
+  }
+    /** Actualiza los datos de un movimiento existente y persiste los cambios. */
+  async actualizar(movimientoActualizado: Movimiento): Promise<void> {
+    await this.listo;
+
+    const actualizados = this.movimientosSubject.value.map((m) =>
+      m.id === movimientoActualizado.id ? movimientoActualizado : m,
+    );
+
+    await this.persistir(actualizados);
+  }
 
   /** Marca como sincronizados los ids indicados (tras un envío exitoso). */
   async marcarSincronizados(ids: string[]): Promise<void> {
@@ -83,6 +107,7 @@ export class OfflineStorageService {
 
   private async persistir(lista: Movimiento[]): Promise<void> {
     await this.storage!.set(CLAVE_MOVIMIENTOS, lista);
+  
     this.movimientosSubject.next(lista);
   }
 
