@@ -13,21 +13,38 @@
 import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Movimiento } from './movimiento.model';
 
 /** Clave única bajo la que se guarda la lista completa. */
 const CLAVE_MOVIMIENTOS = 'controlaplus.movimientos';
 
+/** Lo que ve el usuario: todo menos las eliminaciones aún sin confirmar. */
+const visibles = (lista: Movimiento[]): Movimiento[] => lista.filter((m) => !m.eliminado);
+
+/** Lo que falta enviar al servidor: altas, ediciones y eliminaciones. */
+const pendientes = (lista: Movimiento[]): Movimiento[] =>
+  lista.filter((m) => m.estado === 'pendiente');
+
 @Injectable({ providedIn: 'root' })
 export class OfflineStorageService {
   private storage: Storage | null = null;
 
-  /** Copia en memoria para lecturas síncronas y para alimentar la vista. */
+  /**
+   * Copia en memoria de la lista completa, incluidas las eliminaciones aún no
+   * confirmadas por el servidor (`eliminado: true`).
+   */
   private readonly movimientosSubject = new BehaviorSubject<Movimiento[]>([]);
 
-  /** La vista se suscribe aquí; emite cada vez que cambia la lista. */
-  readonly movimientos$: Observable<Movimiento[]> = this.movimientosSubject.asObservable();
+  /** Última lista persistida para evitar escrituras redundantes y spam del log. */
+  private ultimaListaPersistida: Movimiento[] | null = null;
+
+  /** La vista se suscribe aquí; emite cada vez que cambia la lista. Sin eliminados. */
+  readonly movimientos$: Observable<Movimiento[]> = this.movimientosSubject.pipe(map(visibles));
+
+  /** Cola de sincronización observable: pendientes, eliminaciones incluidas. */
+  readonly pendientes$: Observable<Movimiento[]> = this.movimientosSubject.pipe(map(pendientes));
 
   /** Promesa que se resuelve cuando el motor de almacenamiento está listo. */
   private readonly listo: Promise<void>;
@@ -43,23 +60,25 @@ export class OfflineStorageService {
     // create() abre (o crea) la base de datos; es obligatorio antes de usarla.
     this.storage = await this.ionicStorage.create();
     const guardados = (await this.storage.get(CLAVE_MOVIMIENTOS)) as Movimiento[] | null;
-
+    
     if (guardados && guardados.length) {
-      this.movimientosSubject.next(guardados);
+      this.ultimaListaPersistida = [...guardados];
+      this.movimientosSubject.next(this.ultimaListaPersistida);
     } else if (environment.cargarDatosDemo) {
       await this.persistir(this.datosDemo());
     }
   }
 
-  /** Todos los movimientos, del más reciente al más antiguo. */
+  /** Todos los movimientos visibles (sin eliminados), del más reciente al más antiguo. */
   async todos(): Promise<Movimiento[]> {
     await this.listo;
-    return [...this.movimientosSubject.value];
+    return visibles(this.movimientosSubject.value);
   }
 
-  /** Cola de sincronización: los que aún no llegaron al servidor. */
+  /** Cola de sincronización: los que aún no llegaron al servidor, eliminaciones incluidas. */
   async pendientes(): Promise<Movimiento[]> {
-    return (await this.todos()).filter((m) => m.estado === 'pendiente');
+    await this.listo;
+    return pendientes(this.movimientosSubject.value);
   }
 
   /** Inserta al principio de la lista y persiste. */
@@ -67,12 +86,68 @@ export class OfflineStorageService {
     await this.escribir((lista) => [mov, ...lista]);
   }
 
-  /** Marca como sincronizados los ids indicados (tras un envío exitoso). */
-  async marcarSincronizados(ids: string[]): Promise<void> {
-    const conjunto = new Set(ids);
+  /**
+   * Marca el movimiento como eliminado y lo deja pendiente: deja de mostrarse,
+   * pero se borra del dispositivo solo cuando el servidor confirma la
+   * eliminación (ver marcarSincronizados).
+   */
+  async eliminar(id: string): Promise<void> {
     await this.escribir((lista) =>
-      lista.map((m) => (conjunto.has(m.id) ? { ...m, estado: 'sincronizado' as const } : m)),
+      lista.map((m) =>
+        m.id === id && !m.eliminado
+          ? { ...m, eliminado: true, estado: 'pendiente' as const, version: (m.version ?? 0) + 1 }
+          : m,
+      ),
     );
+  }
+
+  /**
+   * Aplica los datos editables (concepto, monto, tipo, ubicación) sobre la
+   * versión guardada, en su turno de la cola. Los datos de control (estado,
+   * versión, fecha, eliminado) nunca se toman de `cambios`, así que una copia
+   * antigua de la vista no los pisa. Queda pendiente con una versión nueva.
+   */
+  async actualizar(cambios: Movimiento): Promise<void> {
+    await this.escribir((lista) =>
+      lista.map((m) =>
+        m.id === cambios.id && !m.eliminado
+          ? {
+              ...m,
+              concepto: cambios.concepto,
+              monto: cambios.monto,
+              tipo: cambios.tipo,
+              ubicacion: cambios.ubicacion,
+              estado: 'pendiente' as const,
+              version: (m.version ?? 0) + 1,
+            }
+          : m,
+      ),
+    );
+  }
+
+  /**
+   * Confirma los movimientos enviados (tras un envío exitoso). Cada uno se
+   * marca 'sincronizado' (o, si era una eliminación, se borra) solo si la
+   * versión guardada sigue siendo la enviada. Devuelve los ids que cambiaron
+   * durante el envío y siguen pendientes.
+   */
+  async marcarSincronizados(enviados: Movimiento[]): Promise<string[]> {
+    const versionEnviada = new Map(enviados.map((m) => [m.id, m.version ?? 0]));
+    let siguenPendientes: string[] = [];
+    await this.escribir((lista) => {
+      siguenPendientes = [];
+      return lista.flatMap((m) => {
+        if (!versionEnviada.has(m.id)) {
+          return [m];
+        }
+        if ((m.version ?? 0) !== versionEnviada.get(m.id)) {
+          siguenPendientes.push(m.id);
+          return [m];
+        }
+        return m.eliminado ? [] : [{ ...m, estado: 'sincronizado' as const }];
+      });
+    });
+    return siguenPendientes;
   }
 
   /** Borra todo (útil en pruebas). */
@@ -97,6 +172,7 @@ export class OfflineStorageService {
 
   private async persistir(lista: Movimiento[]): Promise<void> {
     await this.storage!.set(CLAVE_MOVIMIENTOS, lista);
+  
     this.movimientosSubject.next(lista);
   }
 
