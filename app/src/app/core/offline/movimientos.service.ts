@@ -20,6 +20,7 @@ import { ApiService } from './api.service';
 import { SyncService } from './sync.service';
 import { DURACION_TOAST_MS, MENSAJES } from './mensajes';
 import { Movimiento, NuevoMovimiento, generarId } from './movimiento.model';
+import { environment } from '../../../environments/environment';
 
 /** Saldo previo a los movimientos registrados (demo). */
 const BALANCE_BASE = 21580;
@@ -42,9 +43,9 @@ export class MovimientosService {
     ),
   );
 
-  /** Cuántos movimientos esperan sincronización. */
-  readonly pendientes$: Observable<number> = this.movimientos$.pipe(
-    map((lista) => lista.filter((m) => m.estado === 'pendiente').length),
+  /** Cuántos movimientos esperan sincronización (eliminaciones incluidas). */
+  readonly pendientes$: Observable<number> = this.storage.pendientes$.pipe(
+    map((lista) => lista.length),
   );
 
   async registrar(datos: NuevoMovimiento): Promise<Movimiento> {
@@ -54,8 +55,10 @@ export class MovimientosService {
       monto: datos.monto,
       tipo: datos.tipo,
       fecha: new Date().toISOString(),
+      ubicacion: datos.ubicacion,
       estado: 'pendiente',
     };
+    
 
     // 1) Siempre primero en el dispositivo (offline-first)
     await this.storage.agregar(movimiento);
@@ -72,10 +75,14 @@ export class MovimientosService {
     if (!this.sync.reservarEnvio([movimiento.id]).length) {
       return movimiento;
     }
+    let cambioDuranteEnvio = false;
     try {
       await this.api.enviarMovimientos([movimiento]);
-      await this.storage.marcarSincronizados([movimiento.id]);
-      await this.toast(MENSAJES.toastEnviadoOnline, 'cian');
+      cambioDuranteEnvio = (await this.storage.marcarSincronizados([movimiento])).length > 0;
+      await this.toast(
+        environment.usarServidorSimulado ? 'Registro completado con API simulada (POST).' : MENSAJES.toastEnviadoOnline,
+        'cian',
+      );
     } catch (err) {
       console.warn('Fallo al enviar estando en línea; queda pendiente →', err);
       await this.toast(MENSAJES.toastSyncError, 'ambar');
@@ -83,7 +90,28 @@ export class MovimientosService {
     } finally {
       this.sync.liberarEnvio([movimiento.id]);
     }
+    // Se editó o eliminó mientras se enviaba: sigue pendiente y vuelve a la
+    // sincronización normal (después de liberarlo, para que pueda reservarlo).
+    if (cambioDuranteEnvio) {
+      void this.sync.sincronizar('cambio durante el envío');
+    }
     return movimiento;
+  }
+
+  /**
+   * Elimina un movimiento: deja de verse al momento y la eliminación queda
+   * pendiente; SyncService la envía con el resto de la cola.
+   */
+  async eliminar(id: string): Promise<void> {
+    await this.storage.eliminar(id);
+  }
+
+  /**
+   * Actualiza los datos editables de un movimiento; queda pendiente y
+   * SyncService envía la versión nueva con el resto de la cola.
+   */
+  async actualizar(movimiento: Movimiento): Promise<void> {
+    await this.storage.actualizar(movimiento);
   }
 
   private async toast(message: string, variante: 'cian' | 'ambar' | 'oscuro'): Promise<void> {

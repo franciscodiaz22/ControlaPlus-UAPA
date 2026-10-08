@@ -20,6 +20,7 @@ import { NetworkService } from '../network/network.service';
 import { OfflineStorageService } from './offline-storage.service';
 import { ApiService } from './api.service';
 import { DURACION_TOAST_MS, MENSAJES, REINTENTO_SYNC_MS } from './mensajes';
+import { environment } from '../../../environments/environment';
 
 export interface ResultadoSync {
   origen: string;
@@ -66,12 +67,13 @@ export class SyncService {
       });
 
     // Pendientes nuevos con la app ya en línea (p. ej. un movimiento aceptado
-    // por Bluetooth): entran en la sincronización normal. Se observa desde
-    // después de la carga inicial, para no tomar lo guardado como nuevo.
+    // por Bluetooth, una edición o una eliminación): entran en la
+    // sincronización normal. Se observa desde después de la carga inicial,
+    // para no tomar lo guardado como nuevo.
     void this.storage.todos().then(() => {
-      this.storage.movimientos$
+      this.storage.pendientes$
         .pipe(
-          map((lista) => lista.filter((m) => m.estado === 'pendiente').length),
+          map((lista) => lista.length),
           pairwise(),
           filter(([antes, ahora]) => ahora > antes),
           debounceTime(ESPERA_PENDIENTES_NUEVOS_MS),
@@ -113,13 +115,20 @@ export class SyncService {
 
       console.log(`SyncService: enviando ${pendientes.length} pendiente(s) · origen: ${origen}`);
       await this.api.enviarMovimientos(pendientes);
-      await this.storage.marcarSincronizados(pendientes.map((m) => m.id));
-      await this.toast(MENSAJES.toastSyncOk(pendientes.length), 'cian');
+      // Los editados o eliminados durante el envío siguen pendientes.
+      const cambiados = await this.storage.marcarSincronizados(pendientes);
+      const mensaje = environment.usarServidorSimulado
+        ? `Prueba completada: ${pendientes.length} movimiento(s) aceptado(s) por la API simulada.`
+        : MENSAJES.toastSyncOk(pendientes.length);
+      await this.toast(mensaje, 'cian');
       this.terminarRacha();
       this.resultadoSubject.next({ origen, enviados: pendientes.length });
-      // Si mientras se enviaba llegaron más pendientes (p. ej. por Bluetooth),
-      // se hace otra vuelta en cuanto se libere la bandera.
-      const quedan = (await this.storage.pendientes()).some((m) => !this.enVuelo.has(m.id));
+      // Si mientras se enviaba llegaron más pendientes (p. ej. por Bluetooth)
+      // o cambió alguno de los enviados, se hace otra vuelta en cuanto se
+      // libere la bandera.
+      const quedan =
+        cambiados.length > 0 ||
+        (await this.storage.pendientes()).some((m) => !this.enVuelo.has(m.id));
       if (quedan) {
         setTimeout(() => void this.sincronizar('pendientes nuevos'), 0);
       }
