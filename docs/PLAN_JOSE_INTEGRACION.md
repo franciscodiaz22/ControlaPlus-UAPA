@@ -1,13 +1,405 @@
-# PLAN DE INTEGRACIÓN — JOSÉ DANIEL
+# PLAN MAESTRO DE FINALIZACIÓN — CONTROLA+
 
 > Proyecto: **Controla+** — Programación de Dispositivos Móviles, UAPA.
-> Rama de trabajo: `feature/jose-integracion` (única rama permitida para este plan).
-> Responsable: **José Daniel Marte** — Conectividad + Modo Offline + Integración técnica (líder técnico).
-> Documento de control: se actualiza al terminar cada fase. Cada fase requiere autorización explícita antes de ejecutarse.
+> Rama de trabajo: `feature/jose-integracion` (única rama de trabajo; no se hace merge a `main` hasta la fase M12).
+> Responsable del plan: **José Daniel Marte** — Conectividad + Modo Offline + Integración técnica (líder técnico).
+> Origen: este documento empezó el 2026-09-30 como *Plan de integración de José Daniel* (Parte II, que se conserva íntegra). Desde el **2026-10-12** es el plan maestro para **terminar todo el proyecto**.
+> Autorización: los integrantes del equipo autorizaron a José Daniel a modificar, corregir, completar, integrar y pulir cualquier módulo. Para efectos académicos se mantiene la responsabilidad original de cada módulo (sección I.4).
+> Documento de control: se actualiza al terminar cada fase. **Cada fase requiere autorización explícita antes de ejecutarse y termina deteniéndose a esperar la siguiente autorización.**
 
-**Leyenda de estados:** `[ ]` Pendiente · `[~]` En progreso · `[x]` Completada · `[!]` Bloqueada / depende de otro integrante
+**Leyenda de estados:**
+
+| Marca | Significado |
+|---|---|
+| `[x]` | **COMPLETADO** (verificado; si solo se verificó en navegador se indica `· Android pendiente`) |
+| `[~]` | **EN PROGRESO** (parte hecha, parte pendiente) |
+| `[ ]` | **PENDIENTE** (no empezado) |
+| `[!]` | **BLOQUEADO / DEPENDIENTE DE PRUEBA REAL** (necesita teléfono Android, un segundo teléfono, un backend en red o una decisión del usuario) |
+
+En la Parte II, escrita antes de la autorización del equipo, `[!]` significaba "depende de otro integrante". Esas tareas ya no esperan a nadie y se redirigen a las fases M (ver notas "→ Mx").
+
+## Cómo está organizado este documento
+
+- **Parte I — Plan maestro de finalización** (secciones I.1–I.12): estado actual, unidades U1–U10, contratos protegidos, fases M0–M12, decisiones y pendientes.
+- **Parte II — Historial del plan de integración** (secciones 1–10 originales): conectividad, modo offline, sincronización e integración (Fases 0–6 originales, del 2026-09-30 al 2026-10-01). Se conserva sin cambios de fondo; solo se añadieron notas de redirección y estados actualizados. **El registro de cambios único sigue en la sección 9.**
+- Para no confundir numeraciones, las fases nuevas usan el prefijo **M** (M0–M12) y sus tareas `M1.1`, `M1.2`…; las fases y tareas antiguas (`1.2`, `3.4`, `4.0`…) mantienen su número.
 
 ---
+
+# PARTE I — PLAN MAESTRO DE FINALIZACIÓN
+
+## I.1 Estado actual (después del merge `4648919`)
+
+- **Rama:** `feature/jose-integracion`, commit `4648919` *"Merge origin/main into feature/jose-integracion"* (2026-10-07), subida a GitHub y con el árbol limpio.
+- **`main`:** `a648578` (PR #3 de Kilsy). `main` contiene los PR #1 (Compartir Cerca, BLE), #2 (Ángel, módulo QR, `acae169`) y #3 (Kilsy, CRUD, `bdb6bb6`). `feature/jose-integracion` contiene todo `main` más el trabajo de José.
+- **Ramas de los compañeros** (auditoría del 2026-10-12): `feature/francisco-interfaz`, `feature/felix-gps` y `feature/angel-camera-api` no tienen commits propios (apuntan a `f827781`). `feature/kilsy-crud` ya está integrada. **No queda trabajo de ningún compañero fuera de esta rama.**
+- **Última validación registrada por José** (al cerrar el merge, 2026-10-07): **20/20 pruebas** del repositorio en verde (`npx ng test`), `ng build` correcto, `git diff --check` limpio y árbol limpio. M0 no cambia código; la línea base se vuelve a ejecutar al empezar M1 (tarea M1.1).
+- **Lint:** el último valor medido son 21 errores preexistentes (Fase 4, 2026-10-01). Después del merge **no se ha vuelto a medir**: se revalida en M7.
+- **Pantallas actuales:** pestañas *Inicio*, *Compartir* (BLE) y *QR*; ruta `/compartir` directa y ruta `/nuevo` (formulario de Kilsy, sin enlace en la UI).
+- **Dependencias instaladas:** incluyen `@capacitor/geolocation` (se usa en Inicio) y `@capacitor/camera` (instalada, **sin uso**). No hay librería de mapas.
+
+## I.2 Lo realizado desde el último registro (2026-10-01 → 2026-10-07)
+
+El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se hizo después y **no estaba documentado en este plan**:
+
+| Fecha | Qué | Dónde | Estado |
+|---|---|---|---|
+| 2026-10-05 | Ángel integra el módulo QR (ML Kit), consulta GET simulada `/qr/consultar`, "Agregar movimiento" desde el QR, modo offline de prueba (`NetworkService.setModoOfflinePrueba`), botón de fallo de API, captura GPS opcional en el alta (`Geolocation` en `home.page.ts`), campo `ubicacion` en `Movimiento` y modo de prueba web en Compartir | `acae169` (PR #2) | Integrado |
+| 2026-10-06 | Kilsy añade `eliminar()`/`actualizar()` (solo locales), botones Editar/Eliminar en Inicio, `MovimientosFormComponent` (`/nuevo`) y `MovimientosListaComponent` (plantilla vacía) | `bdb6bb6` (PR #3) | Integrado |
+| 2026-10-07 | **Merge de `origin/main` en esta rama** y, en el mismo commit, **sincronización del CRUD** (tarea 4.2 de la Parte II) | `4648919` | `[x]` · Android pendiente |
+
+**Resultado de la tarea 4.2 (integración CRUD + sincronización), incluido en `4648919`:**
+
+- **Versionado:** `Movimiento.version?: number` sube con cada edición o eliminación local (ausente = 0, compatible con datos antiguos).
+- **Tombstones:** `Movimiento.eliminado?: boolean`. Eliminar marca el movimiento como `eliminado` y `pendiente` en lugar de borrarlo. Deja de verse (`movimientos$` filtra los eliminados), viaja al servidor con la cola y se borra del dispositivo solo cuando el servidor lo confirma.
+- **`OfflineStorageService`:** `eliminar` y `actualizar` pasan por la cola de escrituras `escribir()` (2.1). `actualizar` solo toma los campos editables (concepto, monto, tipo, ubicación), así que una copia antigua de la vista no pisa el estado, la versión, la fecha ni `eliminado`. `marcarSincronizados(enviados)` recibe los movimientos enviados, confirma solo si la versión guardada sigue siendo la enviada y devuelve los ids que cambiaron durante el envío. Hay un `pendientes$` observable que incluye las eliminaciones.
+- **`MovimientosService` / `SyncService`:** las ediciones y eliminaciones entran en la misma cola de sincronización. Un cambio durante un envío directo de `registrar()` vuelve a la sincronización normal. El watcher de pendientes y la segunda vuelta (3.5) envían cada cambio una sola vez.
+- **Contrato de `POST /movimientos/lote`** documentado en `api.service.ts`: movimiento completo por `id` (crear o reemplazar), `version` para descartar elementos antiguos y `eliminado: true` para borrar.
+- **Corrección visual:** se eliminó el `ion-note` del monto duplicado en `home.page.html`.
+- **Pruebas en el repositorio:** `core/offline/crud-sincronizacion.spec.ts` (18 casos: crear, actualizar, eliminar, cola de escritura y envíos, persistencia con el motor real de Ionic Storage), más las pruebas de creación de los dos componentes de Kilsy (se les añadieron los providers que necesitan). Total: **20 pruebas en el repo**.
+  - *Aclaración:* las cifras "67/67" de la Parte II son pruebas **temporales en el scratchpad** (fuera del repositorio). Las 20 de arriba son las únicas que viven en el repo y se ejecutan con `npx ng test`.
+
+## I.3 Estado por unidad (U1–U10)
+
+> Referencia de unidades: la lista U1–U10 acordada por el equipo. **La consigna oficial del proyecto final no está en el repositorio** (decisión D1).
+
+| Unidad | Tema | Responsable original | Estado real | Qué falta | Fase |
+|---|---|---|---|---|---|
+| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | `/nuevo` se carga de forma eager, queda fuera de las tabs y no tiene enlace; revisar las rutas finales cuando lleguen Mapa y Multimedia; indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
+| U3 | Componentes, interacciones y gestos | Francisco | `[ ]` Hay componentes Ionic, pero **ningún gesto** | Gestos reales (`ion-item-sliding`, `ion-refresher`), interacción y evidencias | M3 |
+| U4 | Conectividad | José | `[x]` · Android pendiente | Solo las pruebas Android (I.10) | M8 |
+| U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
+| U6 | GPS + mapa interactivo + marcadores | Félix | `[~]` Captura GPS parcial en `home.page.ts`; `Movimiento.ubicacion` existe | Servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual | M1 |
+| U7 | Audio y video | Francisco | `[ ]` | Todo el módulo | M4 |
+| U8 | Cámara / QR | Ángel | `[~]` QR funcional con ML Kit (Android) y modo web simulado; `@capacitor/camera` sin uso | Decidir si hace falta foto (D3); pruebas; capturas reales | M5 |
+| U9 | Storage + CRUD | Kilsy | `[~]` CRUD funcional y persistente; **sincronización CRUD `[x]`** (versionado, tombstones, 18 pruebas) | Validaciones, formulario accesible, confirmación al eliminar, editar el tipo, componentes muertos, documento de requisitos | M2 |
+| U10 | REST API GET + POST | Ángel | `[~]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) en código, **solo simulados** (`usarServidorSimulado: true`, dominio `.example`) | Servidor real verificable (D4), tests de `ApiService`, evidencias | M6 |
+
+## I.4 Responsabilidad académica original
+
+Se conserva para el informe y la defensa. La columna "Finalización" indica quién completa lo que falta tras la autorización del equipo.
+
+| Integrante | Rama original | Responsabilidad original | Aporte registrado en git | Finalización |
+|---|---|---|---|---|
+| José Daniel Marte | `feature/jose-integracion` | Conectividad + Modo Offline + Integración técnica (líder técnico) | Fases 0–4 de la Parte II, integración BLE → sync, CRUD sincronizado, merge `4648919`, organización del equipo | José |
+| Francisco José Díaz Abreu | `feature/francisco-interfaz` | Interfaz + Multimedia (U3, U7) | AP4 de conectividad WiFi (`4d37c82`) y Wi-Fi Direct (`17a76e6`), fuera de `app/`. Sin commits en su rama | José (con autorización) |
+| Felix Alejandro Mejia Villa | `feature/felix-gps` | GPS + Mapa (U6) | Sin commits | José (con autorización) |
+| Ángel Diosiris Moscoso Viloria | `feature/angel-camera-api` | Cámara/QR + API REST + Pruebas (U8, U10) | `acae169` (PR #2 desde un fork) y `documentacion/Modulo_Camara_API_REST.md` | José completa la API real, las pruebas y la evidencia |
+| Kilsy Maria Vasquez Rosario | `feature/kilsy-crud` | CRUD + Almacenamiento + Requisitos (U9) | `bdb6bb6` (PR #3) | José completa el pulido; el documento de requisitos se coordina (M10) |
+
+## I.5 Contratos protegidos (reglas de arquitectura)
+
+Lo ya validado no se rompe. Cualquier cambio en estos puntos se justifica en la fase, se prueba con la regresión completa y se anota en el registro (sección 9).
+
+| # | Contrato | Regla |
+|---|---|---|
+| C1 | `NetworkService` (`core/network/`) | API pública estable: `isOnline$`, `estado$`, `isOnline`, `estado`, `init()` idempotente y tolerante a fallos (1.2), `refrescar()`, `setModoOfflinePrueba()`. Los módulos nuevos **leen** el estado; no crean otro detector de red. |
+| C2 | `OfflineStorageService` | Única fuente de movimientos (clave `controlaplus.movimientos`). **Toda escritura pasa por `escribir()`** (2.1). `movimientos$` excluye los eliminados y `pendientes$` incluye los tombstones. `marcarSincronizados(enviados)` confirma por versión. |
+| C3 | `MovimientosService` | Punto de entrada de altas (`registrar`), ediciones (`actualizar`) y eliminaciones (`eliminar`) desde la UI, el QR, el mapa y cualquier módulo nuevo. Lectura por `movimientos$`, `balance$` y `pendientes$`. *Excepción existente documentada:* el receptor BLE guarda con `storage.agregar()` y la sync lo detecta (3.5). |
+| C4 | `SyncService` | Único que envía la cola. Se conservan la bandera anti-paralelo (3.1), la racha con espera creciente (3.3), `enVuelo`/`reservarEnvio`/`liberarEnvio` (3.4), el watcher de pendientes y la segunda vuelta (3.5). Un refresco manual (p. ej. pull-to-refresh) llama a `sincronizar('manual')`; no envía por su cuenta. |
+| C5 | Modelo `Movimiento` | `id` UUID (idempotencia), `estado`, `version`, `eliminado`, `ubicacion`. Los campos nuevos **solo opcionales**. Cualquier cambio revisa `ble-protocolo.ts`, `ApiService` y las pruebas CRUD. |
+| C6 | `ApiService` | Único punto de salida HTTP. Contrato de `/movimientos/lote` documentado en el código. El modo simulado siempre se identifica como simulación. |
+| C7 | Bluetooth (`core/compartir/**`, `features/compartir/**`) | No se modifica salvo un defecto demostrado. Flujo protegido: aceptar → guardado `pendiente` → sincronización. |
+| C8 | Datos pesados | Fotos, audio o video **no entran** en la cola de sincronización ni en el `POST` sin una decisión explícita (D3). |
+| C9 | Regresión obligatoria | En cada fase: las 20 pruebas actuales + las nuevas en verde, `ng build` OK y `git diff --check` limpio. Sin errores de lint **nuevos** en los archivos tocados. |
+| C10 | Archivos compartidos | `app.routes.ts`, `app.component.ts`, `main.ts`, `environments/*`, `package.json`, `angular.json`, `AndroidManifest.xml`: se tocan solo en la fase que lo necesita y quedan listados en su resultado. Los paquetes se instalan solo con autorización explícita. |
+
+## I.6 Ciclo obligatorio por fase
+
+Cada fase M sigue estos pasos, en este orden, y **no avanza sola a la siguiente**:
+
+1. **Auditoría** acotada a la fase (sin repetir auditorías generales).
+2. **Planificación concreta** (tareas Mx.y, archivos, riesgos), presentada si hay decisiones abiertas.
+3. **Implementación** respetando los contratos de I.5.
+4. **Pruebas** automatizadas nuevas + regresión (C9) y prueba manual en navegador cuando aplique.
+5. **Build** (`ng build`).
+6. **Revisión** del diff (`git diff`, `git diff --check`, lint de los archivos tocados).
+7. **Commit** identificable, por ejemplo `M1: GPS, permisos y mapa con marcadores`.
+8. **Push** a `origin/feature/jose-integracion`.
+9. **Marcar la fase** en este plan (estado, resultado y fila del registro) y **detenerse a esperar autorización**.
+
+Lo que solo puede probarse en un dispositivo queda `· Android pendiente` y se añade a la lista consolidada de I.10. Nunca se marca como hecho sin la prueba real.
+
+## I.7 Fases M0–M12
+
+Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12** (justificación en I.8).
+
+### M0 — Estado base y plan maestro `[x]`
+
+- **Objetivo:** convertir este plan en el plan maestro, registrar lo hecho desde el 2026-10-01 y dejar las decisiones abiertas a la vista.
+- **Requisitos:** organización y gestión del proyecto (base de todas las unidades).
+- **Tareas:** M0.1 estado después de `4648919` (I.1); M0.2 historial pendiente de registrar (I.2); M0.3 estado U1–U10 (I.3); M0.4 responsabilidades (I.4); M0.5 contratos (I.5); M0.6 ciclo y fases (I.6–I.8); M0.7 decisiones (I.9); M0.8 pendientes Android (I.10); M0.9 documentación y defensa (I.11).
+- **Archivos:** solo `docs/PLAN_JOSE_INTEGRACION.md`.
+- **Dependencias:** ninguna. **Riesgos:** corromper el historial (ya ocurrió una vez con los `$`, ver registro); se editó con reemplazos exactos.
+- **Pruebas:** sin código. Revisión del Markdown, `git diff --check` y `git status` (solo cambia este archivo).
+- **Evidencias:** el propio diff.
+- **Condición de completada:** el plan refleja el estado real sin dar por hechas tareas pendientes, y el usuario lo revisa. *Cumplida (2026-10-12): el usuario revisó el plan (con una revisión de calidad del Markdown) y autorizó el commit y el push de M0.*
+
+### M1 — U6 GPS + mapa interactivo + marcadores `[ ]`
+
+- **Objetivo:** GPS limpio y con permisos, y una pantalla de mapa con los movimientos que tienen ubicación.
+- **Requisitos:** U6 (GPS, mapa interactivo, marcadores). Parcialmente U1–U2 (nueva ruta y pestaña).
+- **Tareas:**
+  - M1.1 Auditoría acotada (GPS en `home.page.ts`, manifest, `ubicacion` en modelo/sync/BLE) y línea base (20 pruebas + build).
+  - M1.2 `GpsService` (`core/gps/`): `checkPermissions`/`requestPermissions`, `getCurrentPosition` con timeout, errores con mensajes claros, comportamiento web.
+  - M1.3 Permisos Android `ACCESS_COARSE_LOCATION` y `ACCESS_FINE_LOCATION`, y `uses-feature` de GPS con `required="false"`.
+  - M1.4 Inicio usa `GpsService` (deja de llamar directamente al plugin).
+  - M1.5 Librería de mapa (D2), **instalación solo con autorización**, y sus estilos.
+  - M1.6 `MapaPage` (`features/mapa/`):
+    - marcadores de los movimientos visibles con `ubicacion`, con popup de concepto, monto, tipo, fecha y estado (pendiente/sincronizado);
+    - botón "Mi ubicación" y encuadre automático;
+    - aviso sin conexión con `NetworkService.isOnline$`, porque los mapas base necesitan Internet;
+    - ruta lazy y pestaña "Mapa".
+  - M1.7 Pruebas de `GpsService` (plugin simulado) y del mapa (n movimientos → n marcadores; ignora los eliminados y los que no tienen ubicación).
+  - M1.8 Prueba manual en Chrome con geolocalización emulada.
+- **Archivos probables:** `core/gps/gps.service.ts` (+ spec), `features/mapa/*`, `features/inicio/home.page.ts`, `app.routes.ts`, `layout/tabs/*`, `android/app/src/main/AndroidManifest.xml`, `package.json`/`package-lock.json` (solo con autorización), `angular.json` o `global.scss`.
+- **Dependencias:** M0; decisión D2.
+- **Riesgos:**
+  - Con Leaflet: iconos por defecto rotos con el bundler, mapa gris dentro de las tabs (requiere `invalidateSize`), política de uso y atribución de los mapas base de OpenStreetMap.
+  - Permisos denegados.
+  - Romper C3/C5: el mapa solo **lee** y no cambia el modelo.
+- **Pruebas:** nuevas + regresión C9; Chrome con ubicación emulada. Android → I.10.
+- **Evidencias:** mapa con marcadores, popup abierto, "Mi ubicación", aviso sin conexión; en Android, el diálogo de permiso (M9).
+- **Condición de completada:** mapa funcional con marcadores reales en navegador, permisos declarados, pruebas y build en verde, commit y push. Android queda `[!]` en I.10.
+
+### M2 — U9 pulido del CRUD `[ ]`
+
+- **Objetivo:** un CRUD completo, validado y coherente sin tocar la sincronización.
+- **Requisitos:** U9 (crear, leer, actualizar, eliminar, persistencia). Parcialmente U1–U2 (`/nuevo`).
+- **Tareas:**
+  - M2.1 Decidir la pantalla única de alta/edición: el formulario de Kilsy convertido en página Ionic (cabecera, contenido, volver) o el diálogo actual. Es la base de los gestos de M3.
+  - M2.2 Validaciones: concepto obligatorio, monto > 0, tipo; mensajes de error. Validación defensiva también en `registrar()`/`actualizar()` si no rompe las pruebas.
+  - M2.3 Edición del tipo (ingreso/gasto) y de la ubicación, usando `GpsService` (M1).
+  - M2.4 Confirmación antes de eliminar.
+  - M2.5 Enlazar `/nuevo` desde la UI (FAB) dentro de las tabs y como lazy, o eliminarla si no se usa.
+  - M2.6 `MovimientosListaComponent` (plantilla vacía): completarlo y reutilizarlo en Inicio, o retirarlo junto con su spec.
+  - M2.7 Coherencia visual con el tema Controla+.
+  - M2.8 Revisar la copia de `modo_offline/` que tocó `bdb6bb6` (se decide en M7, D5).
+- **Archivos probables:** `features/movimientos/**`, `features/inicio/home.page.*`, `app.routes.ts`, `core/offline/movimientos.service.ts` (solo validación).
+- **Dependencias:** M1 (`GpsService`).
+- **Riesgos:** romper el versionado o los tombstones (C2), mandar campos de control desde la vista o duplicar altas.
+- **Pruebas:** validaciones del formulario, flujo crear/editar/eliminar con confirmación, `crud-sincronizacion.spec.ts` intacto.
+- **Evidencias:** formulario con errores de validación, edición, confirmación de borrado, pendiente offline → sincronizado.
+- **Condición de completada:** CRUD accesible desde la UI, sin código muerto, validado; regresión y build en verde; commit y push.
+
+### M3 — U1–U3 navegación, interacción y gestos `[ ]`
+
+- **Objetivo:** navegación final coherente y gestos reales.
+- **Requisitos:** U1–U2 (tabs, rutas, lazy loading) y U3 (componentes, interacción, gestos).
+- **Tareas:**
+  - M3.1 Revisión de las rutas finales: todas lazy, redirecciones y nombres de pestaña.
+  - M3.2 `ion-item-sliding` en la lista (deslizar → Editar/Eliminar), reutilizando M2.
+  - M3.3 `ion-refresher` (pull-to-refresh) que llama a `SyncService.sincronizar('manual')` (C4).
+  - M3.4 Indicador ONLINE/OFFLINE visible fuera de Inicio (antigua 1.4).
+  - M3.5 Revisión de la integración visual de los toasts y el contador (antigua 4.3).
+  - M3.6 Opcional: otro gesto con `GestureController` si la consigna pide gestos personalizados (D1).
+- **Archivos probables:** `features/inicio/home.page.*`, `layout/tabs/*`, `app.routes.ts`, `theme/*.scss`, `core/network/network-status.component.*` (solo uso).
+- **Dependencias:** M2.
+- **Riesgos:** gestos que roban toques. Ya ocurrió con un `ion-router-outlet` extra que bloqueaba botones (documentado por Ángel). También, el refresco no debe provocar envíos dobles.
+- **Pruebas:** componentes con los gestos presentes; refresco → una sola sync; regresión.
+- **Evidencias:** deslizar un movimiento, pull-to-refresh, indicador en otras pestañas.
+- **Condición de completada:** gestos funcionando en navegador (táctil emulado), rutas revisadas, regresión y build en verde; commit y push.
+
+### M4 — U7 multimedia (audio y video) `[ ]`
+
+- **Objetivo:** pantalla multimedia con audio y video locales y controles propios.
+- **Requisitos:** U7.
+- **Tareas:**
+  - M4.1 Elegir archivos cortos y ligeros, con licencia libre citable (APA 7), en `src/assets/media/`.
+  - M4.2 `MultimediaPage` (`features/multimedia/`) con `<audio>` y `<video>` controlados desde TypeScript: play, pausa, volumen, barra de progreso y tiempo.
+  - M4.3 Ruta lazy y acceso desde la UI (pestaña o enlace, según quepa en la barra).
+  - M4.4 Estilo coherente con Controla+ y accesibilidad (etiquetas, `aria-*`).
+  - M4.5 Pausar al salir de la pantalla.
+  - Contenido sugerido: un video tutorial de uso de la app o sonidos de confirmación, relacionados con el dominio.
+- **Archivos probables:** `features/multimedia/*`, `src/assets/media/*`, `app.routes.ts`, `layout/tabs/*`.
+- **Dependencias:** M0. Independiente del resto (puede adelantarse si urge).
+- **Riesgos:** peso del APK, formatos no soportados en el WebView de Android (usar MP4 H.264 + AAC/MP3), autoplay bloqueado, licencias.
+- **Pruebas:** componente (estado reproducir/pausa, volumen, progreso), manual en Chrome; Android → I.10.
+- **Evidencias:** reproductor de audio y de video en uso con sus controles.
+- **Condición de completada:** controles funcionando con archivos locales, licencias anotadas, pruebas y build en verde; commit y push.
+
+### M5 — U8 cámara / QR `[ ]`
+
+- **Objetivo:** cerrar U8 según la decisión D3.
+- **Requisitos:** U8.
+- **Tareas:**
+  - M5.1 Aplicar D3.
+  - M5.2 Si hace falta foto: `@capacitor/camera` (ya instalado) para tomar la foto de un recibo, con permisos (`CAMERA`, y lectura de imágenes si se usa la galería), captura, vista previa y almacenamiento **solo local** (C8).
+  - M5.3 Pruebas de la página QR (flujo web simulado, detección de URL, "Agregar movimiento" por `registrar()`).
+  - M5.4 Si `@capacitor/camera` finalmente no se usa: dejar registrada la decisión de retirarlo en M7.
+- **Archivos probables:** `features/qr/*`, `features/camara/*` o dentro del formulario de M2, `AndroidManifest.xml`, `core/offline/movimiento.model.ts` (solo un campo opcional si se asocia la foto, C5).
+- **Dependencias:** D3; M2 si la foto se asocia al movimiento.
+- **Riesgos:** inflar el almacenamiento o la cola con base64 (C8); permisos en Android 13+.
+- **Pruebas:** spec del QR, spec de la cámara con el plugin simulado; Android → I.10.
+- **Evidencias:** escáner abierto, contenido leído, enlace detectado (pendiente según la doc de Ángel), foto capturada y su vista previa (si aplica).
+- **Condición de completada:** U8 cubierta según D3, con pruebas y build en verde; commit y push.
+
+### M6 — U10 REST API GET + POST `[ ]`
+
+- **Objetivo:** demostrar GET y POST contra un servidor **real y verificable**, sin inventar un backend.
+- **Requisitos:** U10. Antigua 4.1.
+- **Tareas:**
+  - M6.1 Aplicar D4.
+  - M6.2 Con la opción A: `server/` con Node puro, sin dependencias:
+    - `GET /movimientos`, `POST /movimientos/lote` (idempotente por `id`, respeta `version` y `eliminado`) y `GET /qr/consultar`;
+    - persistencia en un archivo JSON, CORS para el navegador y registro de cada petición en consola;
+    - instrucciones de arranque.
+  - M6.3 `environments/*`: modos simulado / local / dispositivo (`adb reverse` o IP de la red local), sin dejar `.example` en el modo real.
+  - M6.4 Android: permitir HTTP en claro **solo** hacia el host de pruebas (`network_security_config`) o usar `adb reverse`; revisar contenido mixto en el WebView.
+  - M6.5 Tests de `ApiService` con `HttpTestingController` (URL, método, cuerpo, params de GET, modo simulado).
+  - M6.6 Actualizar `documentacion/Modulo_Camara_API_REST.md`, distinguiendo con claridad lo simulado de lo real.
+- **Archivos probables:** `server/*` (nuevo), `core/offline/api.service.ts` (+ spec), `environments/*`, `android/app/src/main/res/xml/*`, `AndroidManifest.xml`, `documentacion/Modulo_Camara_API_REST.md`.
+- **Dependencias:** D4; M5 (qué viaja en el POST).
+- **Riesgos:** cleartext bloqueado; IP cambiante; CORS; romper la sync al cambiar de modo (la sync completa se prueba contra el servidor real).
+- **Pruebas:** tests de `ApiService`; prueba de punta a punta en navegador contra el servidor (registro → POST → aparece en `GET /movimientos`; offline → reconexión → lote); Android → I.10.
+- **Evidencias:** consola del servidor recibiendo GET y POST, respuesta GET en la app, `GET /movimientos` mostrando lo enviado.
+- **Condición de completada:** GET y POST reales verificados en navegador, tests en verde, documentación honesta; commit y push.
+
+### M7 — Integración completa `[ ]`
+
+- **Objetivo:** dejar la app estable y limpia como un todo.
+- **Requisitos:** todas (integración). Antiguas 4.5, 4.6 y 4.7.
+- **Tareas:**
+  - M7.1 Regresión completa: todas las pruebas, build y prueba de humo de cada pestaña en Chrome.
+  - M7.2 Lint (antigua 4.6): medir de nuevo y corregir los errores de los archivos tocados.
+  - M7.3 Carpetas duplicadas de la raíz (`detector_red/`, `modo_offline/`, `compartir_cerca/`, `traspaso_cerca/`): decisión D5 (antigua 4.7).
+  - M7.4 Limpieza de configuración: `analytics` personal en `angular.json`, `android.overridePathCheck=true` en `gradle.properties` (D6), `.vscode/launch.json` de la raíz, dependencias sin uso.
+  - M7.5 `environment.prod.ts` coherente con D4.
+  - M7.6 Revisar el arranque (`app.component.ts`) y los providers (`main.ts`).
+- **Dependencias:** M1–M6.
+- **Riesgos:** regresiones cruzadas en `home.page.*` (archivo tocado por 3 personas) y en `app.routes.ts`.
+- **Condición de completada:** todo en verde, sin errores de lint en el código de la app (o con los restantes justificados), configuración limpia; commit y push.
+
+### M8 — Pruebas Android `[!]`
+
+- **Objetivo:** validar en un dispositivo real todo lo marcado `· Android pendiente`.
+- **Requisitos:** todas las unidades con hardware: U4, U5, U6, U7, U8, U10. Antiguas 5.3 y 5.4.
+- **Tareas:** compilar (`npx @ionic/cli build` + `npx cap sync android`), instalar el APK y ejecutar el checklist de I.10 anotando el resultado real de cada caso (OK / falla / no probado).
+- **Dependencias:** M7; teléfono Android (y un segundo teléfono para BLE); servidor de M6 accesible desde el teléfono.
+- **Riesgos:** ruta de Windows con caracteres no ASCII (D6), versión de Java/Gradle (Ángel documentó usar JBR 21), driver del emulador.
+- **Condición de completada:** checklist con un resultado real por caso; los fallos se corrigen (volviendo a la fase dueña) o quedan documentados como limitación.
+
+### M9 — Evidencias `[!]`
+
+- **Objetivo:** reunir capturas (y video si la consigna lo pide) **reales** de la app.
+- **Tareas:**
+  - M9.1 Definir la convención `docs/evidencias/Ux_descripcion_plataforma.png`.
+  - M9.2 Capturas de navegador de cada fase (pueden tomarse al cerrar cada fase).
+  - M9.3 Capturas Android de M8.
+  - M9.4 Índice de evidencias por unidad.
+- **Regla:** no se inventan evidencias, no se reutilizan imágenes de otra funcionalidad y no se presentan capturas del prototipo web antiguo como si fueran de la app (antigua 6.2). Lo que falte queda marcado como faltante.
+- **Dependencias:** M8 para las de Android.
+- **Condición de completada:** cada unidad U1–U10 tiene al menos una evidencia real, o su ausencia está justificada.
+
+### M10 — Documentación final `[ ]`
+
+- **Objetivo:** documentación técnica y académica completa (detalle en I.11).
+- **Tareas:** documento técnico, README raíz, documentos por módulo, requisitos, diagramas (antigua 6.3), referencias APA 7, anexos, guion de defensa individual y actualización de `equipo/*.md` (antigua 6.4).
+- **Dependencias:** M9 (las evidencias se citan en la documentación).
+- **Condición de completada:** documentos revisados por el usuario, coherentes con el código y sin afirmar nada que no esté verificado.
+
+### M11 — Auditoría final `[ ]`
+
+- **Objetivo:** comprobar el cumplimiento contra la consigna (D1).
+- **Tareas:**
+  - Matriz U1–U10 → código → prueba → evidencia → sección del documento.
+  - Revisión de los contratos (I.5), de los pendientes abiertos y de este plan.
+  - Build, pruebas y `git status` limpios.
+- **Condición de completada:** no queda ningún requisito sin estado justificado.
+
+### M12 — Pull Request y entrega `[ ]`
+
+- **Objetivo:** integrar en `main` y preparar la entrega.
+- **Tareas:**
+  - PR `feature/jose-integracion` → `main` con resumen por unidad.
+  - Merge **solo con autorización explícita del usuario**.
+  - Paquete de entrega (ZIP/enlace según la consigna, `ENLACE_GITHUB.txt`).
+  - Etiqueta de versión si se decide.
+- **Condición de completada:** PR aprobado e integrado y entrega preparada.
+
+## I.8 Dependencias entre fases
+
+```
+M0 ──► M1 (GPS/mapa) ──► M2 (CRUD) ──► M3 (navegación/gestos) ──┐
+ │                                                              │
+ ├──► M4 (multimedia, independiente) ───────────────────────────┤
+ ├──► M5 (cámara/QR) ──► M6 (API REST) ─────────────────────────┤
+ │                                                              ▼
+ └── decisiones D1–D6 ──────────────────────────────────────► M7 (integración)
+                                                                │
+                                   M8 (Android) [!] ◄───────────┘
+                                        │
+                                        ▼
+                     M9 (evidencias) ──► M10 (documentación) ──► M11 (auditoría) ──► M12 (PR/entrega)
+```
+
+- **M1 antes de M2:** M1 saca la lógica GPS de `home.page.ts` a `GpsService`, y el formulario de M2 ya lo usa.
+- **M2 antes de M3:** los gestos (deslizar para editar/eliminar, pull-to-refresh) actúan sobre la lista y el formulario del CRUD. Hacerlos antes obligaría a rehacer `home.page.*` dos veces.
+- **M5 antes de M6:** si la foto se asocia al movimiento, hay que decidir qué viaja en el POST antes de cerrar la API (C8).
+- **M4** no depende de nadie y puede adelantarse sin riesgo.
+- **M8–M9** dependen de un dispositivo físico: quedan `[!]` hasta que haya teléfono disponible.
+
+## I.9 Decisiones abiertas
+
+| # | Decisión | Opciones | Recomendación | Necesaria antes de | Estado |
+|---|---|---|---|---|---|
+| D1 | Consigna oficial del proyecto final | El usuario aporta el documento o la rúbrica (Canvas) / se usa la lista U1–U10 acordada | Aportar la consigna. En la carpeta del curso solo están "Trabajo final" y "Faces del proyecto", que son material de **otro estudiante** (app "MiBolsillo", 2025), y en Descargas la rúbrica es de **otra asignatura** (IA ISW309) | M3 (gestos), M5 (U8), M6 (U10), M11 | `[!]` |
+| D2 | Librería de mapa | Leaflet + OpenStreetMap (sin clave de API) / `@capacitor/google-maps` (clave y facturación de Google) | Leaflet + OSM, con atribución | M1.5 | `[ ]` |
+| D3 | Alcance de U8 | Solo QR / QR + foto con `@capacitor/camera` | Según D1; si no se aclara, añadir la foto de recibo guardada solo en el teléfono (cubre "cámara" sin ambigüedad) | M5 | `[ ]` |
+| D4 | Backend de U10 | A: servidor propio en Node puro (`server/`, sin dependencias) / B: API pública de pruebas (JSONPlaceholder; su POST **no persiste**) / A + B | A (real y defendible), con el modo simulado solo para demos sin red | M6 | `[ ]` |
+| D5 | Carpetas duplicadas de la raíz | Conservar como históricas con una nota en su README / mover a `historico/` / eliminar | Conservar con una nota (sin borrar) | M7 | `[ ]` (antigua 4.7) |
+| D6 | `android.overridePathCheck=true` | Mantener / quitar y compilar desde una ruta ASCII | Quitar si la compilación en una ruta ASCII funciona | M7/M8 | `[ ]` |
+| D7 | Numeración de las fases M0–M12 y orden M1→M2→M3 | — | Adoptada en M0 | — | `[x]` |
+
+## I.10 Pendientes de pruebas Android (lista consolidada)
+
+Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
+
+| # | Prueba | Origen | Estado |
+|---|---|---|---|
+| A1 | Modo avión real: indicador, banner, contador y sincronización al volver | 1.1, 4.0 | `[!]` |
+| A2 | Segundo plano / reanudación con cambios de red (casos 1–6 de 3.2) | 1.3, 3.2 | `[!]` |
+| A3 | Persistencia: cierre forzado desde "recientes", reinicio del teléfono, reapertura | 2.3, 4.0 | `[!]` |
+| A4 | Servidor caído: reintentos 6→12→24→48→60 s, un solo aviso; registro durante un reintento | 3.3, 3.4 | `[!]` |
+| A5 | Permiso `ACCESS_NETWORK_STATE` en el manifiesto fusionado | 5.4 | `[!]` |
+| A6 | BLE entre dos teléfonos: aceptar con red, sin red (→ pendiente → sync) y durante una sync | 3.5 | `[!]` |
+| A7 | CRUD offline en el dispositivo: editar y eliminar sin red, reconectar, sin duplicados | 4.2 | `[!]` |
+| A8 | QR real con ML Kit: QR de datos (GET) y QR con URL (Abrir enlace) | Ángel | `[!]` (la doc de Ángel registra lectura y compilación; falta la captura del enlace) |
+| A9 | GPS: diálogo de permiso, permiso denegado, captura real | M1 | `[!]` |
+| A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | M1 | `[!]` |
+| A11 | Gestos táctiles reales (deslizar, pull-to-refresh) | M3 | `[!]` |
+| A12 | Audio y video locales en el WebView de Android | M4 | `[!]` |
+| A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[!]` |
+| A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[!]` |
+
+## I.11 Documentación, evidencias, README y defensa
+
+| # | Entregable | Contenido | Fase | Estado |
+|---|---|---|---|---|
+| DOC-1 | Documento técnico general | Arquitectura (core/features/layout), contratos de I.5, flujos (offline-first, sync, CRUD con versionado/tombstones, BLE, GPS/mapa, QR/API, multimedia), cómo compilar y probar | M10 | `[ ]` |
+| DOC-2 | Documento del módulo de conectividad/offline | Antigua 6.1: servicios, cola de escrituras, disparadores de sync, reintentos, pruebas | M10 | `[ ]` |
+| DOC-3 | Documentos por módulo | GPS/mapa, multimedia, CRUD y requisitos (coordinado con Kilsy), interfaz/gestos; actualizar `Modulo_Camara_API_REST.md` (Ángel) con la API real | M10 | `[ ]` |
+| DOC-4 | Diagramas | Actualizar `documentacion/diagramas/*.mmd` (antigua 6.3): arranque, pendientes nuevos, CRUD sincronizado, arquitectura con los módulos nuevos | M10 | `[ ]` |
+| DOC-5 | README raíz | Hoy dice "Autor: Francisco Díaz" y describe solo la AP4. Pasará a: descripción de Controla+, equipo y responsabilidades (I.4), módulos U1–U10, instalación, ejecución web/Android, servidor de pruebas, pruebas automatizadas, estructura de carpetas | M10 | `[ ]` |
+| DOC-6 | Evidencias | `docs/evidencias/` con índice por unidad (M9); solo evidencias reales | M9 | `[!]` |
+| DOC-7 | Referencias APA 7 | Documentación oficial usada (Ionic, Angular, Capacitor y cada plugin, ML Kit, librería de mapa y OpenStreetMap, Ionic Storage, Vitest) y licencias de los archivos multimedia. Cada referencia se verifica al citarla (autor, año, título, URL) | M10 | `[ ]` |
+| DOC-8 | Anexos | Este plan, el checklist de pruebas Android con resultados (M8), el contrato de la API (`/movimientos/lote`, `/qr/consultar`), el listado de pruebas automatizadas y el registro de cambios | M10 | `[ ]` |
+| DOC-9 | Defensa individual | Guion por integrante con su módulo original (I.4), qué hace, cómo se probó y su evidencia. Para José: arquitectura offline-first, cola de escrituras, sync con reintentos, anti-duplicados, CRUD con versionado/tombstones, integración BLE, e integración y finalización del proyecto. Incluir posibles preguntas y la demo en vivo (orden de pantallas) | M10 | `[ ]` |
+| DOC-10 | `equipo/*.md` | Actualizar el estado final de cada integrante sin borrar su responsabilidad original | M10 | `[ ]` |
+
+## I.12 Próximo paso
+
+**Estado:** M0 `[x]` (2026-10-12): plan revisado por el usuario y cerrado con su commit y push autorizados en `feature/jose-integracion`. M1–M12 siguen sin empezar.
+
+**Siguiente fase propuesta:** **M1 — U6 GPS + mapa**. Antes de M1.5 hace falta decidir D2 (librería de mapa) y autorizar la instalación de paquetes.
+
+**Esperando autorización del usuario.** No se inicia M1 automáticamente.
+
+---
+
+# PARTE II — HISTORIAL: PLAN DE INTEGRACIÓN DE JOSÉ DANIEL
+
+> Contenido original del plan (2026-09-30 → 2026-10-01). Se conserva sin cambios de fondo. Desde el 2026-10-12 solo se le añadieron notas de redirección hacia las fases M y estados actualizados donde la realidad cambió (por ejemplo, 4.2, completada en `4648919`). El registro de cambios (sección 9) sigue siendo el registro único del proyecto.
 
 ## 1. Objetivo
 
@@ -56,13 +448,13 @@ Análisis realizado el **2026-09-30** sobre el commit `f827781` (árbol limpio).
 1. ~~**No se sincroniza al arrancar la app.**~~ Si la app se cerró con pendientes y se abre con conexión, no había transición offline → online y los pendientes quedaban sin enviar. *Resuelto en 3.1.*
 2. ~~**No se reacciona al volver del segundo plano.**~~ *Descartado en 1.3:* el plugin `@capacitor/network` 8.0.1 ya lo resuelve en Android. No requiere código.
 3. ~~**Pérdida de datos por escrituras concurrentes** en `OfflineStorageService`.~~ *Confirmado (riesgo real, reproducible incluso con el motor real de Ionic Storage) y **resuelto en 2.1** con una cola de escrituras.*
-4. **Reintento sin límite y con toast cada vez.** Con el servidor caído, `SyncService` reintenta cada 6 s indefinidamente y muestra un toast ámbar en cada intento. *Tarea 3.3.*
-5. **Envío doble posible** entre `MovimientosService.registrar()` (envía el nuevo) y `SyncService.sincronizar()` (envía todos los pendientes, incluido ese). El servidor lo tolera por `id`, pero se puede evitar. *Tarea 3.4.*
+4. **Reintento sin límite y con toast cada vez.** Con el servidor caído, `SyncService` reintenta cada 6 s indefinidamente y muestra un toast ámbar en cada intento. *Tarea 3.3.* *(Nota 2026-10-12: resuelto en 3.3, ver el registro.)*
+5. **Envío doble posible** entre `MovimientosService.registrar()` (envía el nuevo) y `SyncService.sincronizar()` (envía todos los pendientes, incluido ese). El servidor lo tolera por `id`, pero se puede evitar. *Tarea 3.4.* *(Nota 2026-10-12: resuelto en 3.4, ver el registro.)*
 6. ~~**Movimientos recibidos por Bluetooth** (`ble-receptor.service.ts`) se guardan como `pendiente` pero no disparan sincronización.~~ *Resuelto en 3.5 (sin tocar el módulo Bluetooth).*
 7. ~~**Contador de pendientes** no se muestra en la UI.~~ *Resuelto en 2.2.*
 8. ~~**`Network.getStatus()` sin manejo de error** en `init()`.~~ *Resuelto en 1.2.* Si fallaba, `init()` rechazaba y **nunca registraba el listener**.
-9. **No hay pruebas unitarias** del módulo. *Tarea 5.1.*
-10. **Evidencias**: las capturas de `capturas/` y `documentacion/capturas/` son del prototipo web, no de la app real. *Tarea 6.2.*
+9. **No hay pruebas unitarias** del módulo. *Tarea 5.1.* *(Nota 2026-10-12: en curso. Hay 20 pruebas en el repo desde `4648919`; ver I.2 y M7.)*
+10. **Evidencias**: las capturas de `capturas/` y `documentacion/capturas/` son del prototipo web, no de la app real. *Tarea 6.2.* *(Nota 2026-10-12: sigue pendiente → M9.)*
 11. ~~**Doble sincronización posible**~~ *Resuelto en 3.1.* (Detectado en el análisis de 3.1): en `SyncService.sincronizar()` la bandera `sincronizando` se activa **después** de `await storage.pendientes()`, así que dos llamadas simultáneas (reconexión + reintento, o reconexión + arranque) pasan las dos y envían lo mismo dos veces, con dos toasts. No se pierden datos (el servidor deduplica por `id`).)
 
 ---
@@ -87,7 +479,7 @@ Orden recomendado: **0 → 1 → 2 → 3 → 4 → 5 → 6**.
 | 1.1 | Verificar detector actual | Confirmar comportamiento real antes de tocar nada | `core/network/*` (solo lectura) | Prueba temporal con Vitest + jsdom **fuera del proyecto** (scratchpad) usando la implementación web real de `@capacitor/network`; lectura del código Android del plugin | ✔ estado inicial; ✔ cambios online/offline en tiempo real sin repetidos; ✔ `connectionType: 'none'` offline; ✔ `refrescar()`; ✔ `init()` idempotente; ✔ banner de reconexión `true` → `false` a los 3 s. ✘ un fallo de `getStatus()` rompía `init()` → 1.2 | [x] |
 | 1.2 | Manejo de error en `init()` | Que un fallo del plugin no deje la app sin detección de red | `core/network/network.service.ts` | `try/catch` independiente para `getStatus()` (conserva `navigator.onLine`) y para `addListener()`, con `console.warn`. Sin cambios de API | Prueba con plugin simulado: `init()` no rechaza, conserva el estado y **sigue recibiendo cambios**; pruebas de 1.1 en verde (6/6); `ng build` OK | [x] |
 | 1.3 | Refrescar al volver del segundo plano | Estado correcto tras `resume` | — (sin cambios) | **Analizada: no requiere código.** El plugin Android (`NetworkPlugin.java`) detiene el monitoreo en `handleOnPause`; en `handleOnResume` lo reactiva (`registerDefaultNetworkCallback`, que emite `onCapabilitiesChanged` con la red actual → evento `networkStatusChange`) y además notifica si se perdió la conexión durante la pausa. En web, el navegador emite `online`/`offline` también en segundo plano. Añadir `@capacitor/app` duplicaría eventos | Confirmación en dispositivo pendiente en **5.3** (modo avión con la app en segundo plano, en ambos sentidos) | [x] |
-| 1.4 | Indicador visible fuera de Inicio | Que el estado se vea en todas las pestañas | `layout/tabs/*` o `features/compartir/*` | **Solo proponer**; el componente ya es reutilizable (`<app-network-status vista="pill">`) | Acordado con Francisco | [!] Francisco |
+| 1.4 | Indicador visible fuera de Inicio | Que el estado se vea en todas las pestañas | `layout/tabs/*` o `features/compartir/*` | **Solo proponer**; el componente ya es reutilizable (`<app-network-status vista="pill">`) | Acordado con Francisco | [!] Francisco → **[ ] trasladada a M3 (M3.4)** |
 
 ### FASE 2 — Modo Offline y persistencia
 
@@ -96,7 +488,7 @@ Orden recomendado: **0 → 1 → 2 → 3 → 4 → 5 → 6**.
 | 2.1 | Serializar escrituras en almacenamiento | Evitar pérdida de movimientos por escrituras solapadas (hueco 3) | `core/offline/offline-storage.service.ts` | Cola interna de promesas + método privado `escribir(transformar)`; `agregar`, `marcarSincronizados` y `limpiar` la usan. API pública, clave y formato sin cambios | Casos A–F sin pérdida (incluido el motor real), G–J (orden, cálculo en su turno, fallo de escritura, API); Fase 1 en verde; build OK; lint sin errores nuevos. Ver «Resultado de 2.1» | [x] |
 | 2.2 | Mostrar contador de pendientes | Que el usuario vea la cola (hueco 7) | `features/inicio/home.page.ts/.html/.scss` | Línea ámbar en la tarjeta de balance con el `pendientes$` existente; oculta con 0. Ver «Resultado de 2.2» | Render de la plantilla real con servicios reales: 0 → oculto; 1 → singular; 3 → plural; reconexión → sync → desaparece. Build OK; lint sin errores nuevos | [x] |
 | 2.3 | Verificar persistencia tras cierre | Confirmar que la cola sobrevive | — (sin cambios de código) | Prueba real en Chrome con la app compilada: registrar offline → cerrar el navegador → reabrir offline → reconectar. Ver «Resultado de 2.3» | Pendientes, contador, lista, balance e IndexedDB idénticos tras reabrir; al reconectar se sincronizan los 2 y el contador desaparece | [x] (navegador) · Android pendiente en 5.3 |
-| 2.4 | Contrato de almacenamiento con el CRUD | Que el CRUD use el mismo almacenamiento y la cola | `core/offline/offline-storage.service.ts`, `movimiento.model.ts` | **Solo acordar** con Kilsy: qué métodos necesita (actualizar/eliminar) y cómo se sincronizan ediciones y borrados. No implementar CRUD | Acuerdo escrito en la sección 4 | [!] Kilsy |
+| 2.4 | Contrato de almacenamiento con el CRUD | Que el CRUD use el mismo almacenamiento y la cola | `core/offline/offline-storage.service.ts`, `movimiento.model.ts` | **Solo acordar** con Kilsy: qué métodos necesita (actualizar/eliminar) y cómo se sincronizan ediciones y borrados. No implementar CRUD | Acuerdo escrito en la sección 4 | **[x]** cumplida con la integración CRUD de `4648919` (2026-10-07): actualizar/eliminar dentro de `OfflineStorageService` vía `escribir()`, sincronizados con versionado y tombstones (ver I.2) |
 
 #### Análisis de la tarea 2.1 (2026-09-30), sin modificar código
 
@@ -599,13 +991,13 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 | # | Tarea | Objetivo | Archivos | Acción | Verificación | Estado |
 |---|---|---|---|---|---|---|
 | 4.0 | Validación de integración del módulo | Comprobar que Conectividad + Offline + Sync (fases 1–3) funcionan juntos dentro de la app | `app.component.ts`, `core/network/*`, `core/offline/*`, `features/inicio/*` y el flujo de `ble-receptor.service.ts` (solo lectura) | Revisión del código integrado, batería de integración I1–I6, regresión completa y prueba de punta a punta en Chrome. **Sin cambios de código** (no se encontró ningún problema de integración). Ver «Resultado de la Fase 4 (4.0)» | 67/67 automatizadas; 21/21 verificaciones en Chrome real; build OK; 0 errores de lint nuevos | [x] (navegador) · Android en 5.3 |
-| 4.1 | Integración con la API REST | Pasar del servidor simulado al real | `core/offline/api.service.ts`, `environments/*` | Acordar con Ángel endpoint, formato e idempotencia por `id`. `ApiService` pasa a delegar en su cliente o se mantiene como único punto de salida | Con `usarServidorSimulado: false` la sync llega al backend | [!] Ángel |
-| 4.2 | Integración con CRUD | CRUD y offline sobre el mismo almacenamiento | según el acuerdo 2.4 | Revisar el PR de Kilsy y adaptar solo lo necesario en `core/offline` | Crear/editar/eliminar offline y sincronizar | [!] Kilsy |
-| 4.3 | Integración con la interfaz | Consistencia visual del indicador, el contador y los toasts | `core/network/network-status.component.scss`, `theme/conectividad.scss`, `features/inicio/home.page.scss` | Si Francisco define tokens globales, cambiar los colores fijos por esos tokens | Revisión visual con Francisco | [!] Francisco |
-| 4.4 | Integración con GPS/Mapa | Comportamiento del mapa sin red | módulo de Félix (no se toca) | Ofrecer `NetworkService.isOnline$` para que el mapa muestre un aviso offline. Si los movimientos guardan ubicación, acordar el cambio de `movimiento.model.ts` | El mapa sin red no rompe la app | [!] Félix |
-| 4.5 | Rutas y arranque al integrar módulos | Mantener `app.routes.ts`, `app.component.ts` y `main.ts` coherentes | archivos compartidos | Revisar los PR del equipo; añadir rutas/providers solo cuando llegue cada módulo | `ng build` OK tras cada merge | [ ] Continua: se activa cuando lleguen los PR del equipo (hoy no hay módulos nuevos que integrar) |
-| 4.6 | Build y lint limpios | Base estable | — | `npx ng build`, `npx ng lint` | Sin errores. **Estado actual (revalidado en la Fase 4):** build OK; lint con **21 errores previos** (no introducidos por este plan): 19 `prefer-control-flow` en plantillas (`network-status.component.html` 3, `home.page.html` 2, `compartir.page.html` 14 → este último no es mío) y 2 `prefer-inject` (`network.service.ts`, `offline-storage.service.ts`). Corregir solo los de mis archivos, con autorización | [ ] |
-| 4.7 | Política de carpetas duplicadas de la raíz | Evitar divergencia entre `detector_red/`, `modo_offline/` y `app/` | — | Solo decidir con el usuario (no borrar). Opción: marcarlas como históricas en su README. Nota: tras 1.2, 2.1, 2.2 y la Fase 3 ya **no** son idénticas a `app/` | Decisión registrada | [ ] |
+| 4.1 | Integración con la API REST | Pasar del servidor simulado al real | `core/offline/api.service.ts`, `environments/*` | Acordar con Ángel endpoint, formato e idempotencia por `id`. `ApiService` pasa a delegar en su cliente o se mantiene como único punto de salida | Con `usarServidorSimulado: false` la sync llega al backend | [!] Ángel → **[ ] trasladada a M6** (decisión D4) |
+| 4.2 | Integración con CRUD | CRUD y offline sobre el mismo almacenamiento | según el acuerdo 2.4 | Revisar el PR de Kilsy y adaptar solo lo necesario en `core/offline` | Crear/editar/eliminar offline y sincronizar | **[x]** (navegador y pruebas del repo) · Android pendiente (I.10, A7). Realizada en `4648919` (2026-10-07); ver «Resultado de la tarea 4.2» en I.2 |
+| 4.3 | Integración con la interfaz | Consistencia visual del indicador, el contador y los toasts | `core/network/network-status.component.scss`, `theme/conectividad.scss`, `features/inicio/home.page.scss` | Si Francisco define tokens globales, cambiar los colores fijos por esos tokens | Revisión visual con Francisco | [!] Francisco → **[ ] trasladada a M3 (M3.5)** |
+| 4.4 | Integración con GPS/Mapa | Comportamiento del mapa sin red | módulo de Félix (no se toca) | Ofrecer `NetworkService.isOnline$` para que el mapa muestre un aviso offline. Si los movimientos guardan ubicación, acordar el cambio de `movimiento.model.ts` | El mapa sin red no rompe la app | [!] Félix → **[ ] trasladada a M1 (M1.6)**. El campo `ubicacion` ya existe en `movimiento.model.ts` (`acae169`) |
+| 4.5 | Rutas y arranque al integrar módulos | Mantener `app.routes.ts`, `app.component.ts` y `main.ts` coherentes | archivos compartidos | Revisar los PR del equipo; añadir rutas/providers solo cuando llegue cada módulo | `ng build` OK tras cada merge | [ ] Continua: se activa cuando lleguen los PR del equipo (hoy no hay módulos nuevos que integrar). *Nota 2026-10-12: PR #2 y #3 integrados en `4648919`; se aplica en cada fase M y se cierra en M7 (M7.6)* |
+| 4.6 | Build y lint limpios | Base estable | — | `npx ng build`, `npx ng lint` | Sin errores. **Estado actual (revalidado en la Fase 4):** build OK; lint con **21 errores previos** (no introducidos por este plan): 19 `prefer-control-flow` en plantillas (`network-status.component.html` 3, `home.page.html` 2, `compartir.page.html` 14 → este último no es mío) y 2 `prefer-inject` (`network.service.ts`, `offline-storage.service.ts`). Corregir solo los de mis archivos, con autorización | [ ] → **trasladada a M7 (M7.2)**; el lint no se ha vuelto a medir tras `4648919` |
+| 4.7 | Política de carpetas duplicadas de la raíz | Evitar divergencia entre `detector_red/`, `modo_offline/` y `app/` | — | Solo decidir con el usuario (no borrar). Opción: marcarlas como históricas en su README. Nota: tras 1.2, 2.1, 2.2 y la Fase 3 ya **no** son idénticas a `app/` | Decisión registrada | [ ] → **trasladada a M7 (M7.3, decisión D5)** |
 
 #### Resultado de la Fase 4 (4.0 — validación de integración) (2026-10-01)
 
@@ -662,28 +1054,32 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 
 **Estado de la Fase 4:** la **validación de integración de mi módulo (4.0) está completa en navegador**. La fase **no se marca como completada** porque 4.1–4.4 dependen de Ángel, Kilsy, Francisco y Félix, 4.5 se activa con los PR del equipo, y 4.6 (corregir los errores de lint de mis archivos) y 4.7 (política de carpetas duplicadas) esperan tu decisión.
 
+> **Nota 2026-10-12:** 4.2 completada en `4648919`. 4.1 → M6, 4.3 → M3, 4.4 → M1, 4.5/4.6/4.7 → M7. La Fase 4 original se considera absorbida por el plan maestro.
+
 ### FASE 5 — Pruebas y validación
 
 | # | Tarea | Objetivo | Archivos | Acción | Verificación | Estado |
 |---|---|---|---|---|---|---|
-| 5.1 | Pruebas unitarias del módulo | Cobertura mínima de la lógica | nuevos `*.spec.ts` junto a `network.service.ts`, `offline-storage.service.ts`, `sync.service.ts`, `movimientos.service.ts`, `home.page.ts` | Vitest con mocks de `@capacitor/network`, `Storage` y `ApiService` (sin instalar paquetes). Base disponible: las pruebas temporales de las fases 1–3 (red, cola de escrituras, contador y arranque) se pueden portar | `npx ng test` en verde | [ ] |
-| 5.2 | Pruebas manuales en navegador | Escenarios A–D del diseño | — | DevTools offline/online + `simularFallo`. Ya se hizo una prueba real en Chrome para 2.3 | Checklist A (online), B (offline con pendiente), C (reconexión), D (fallo de sync) | [ ] |
-| 5.3 | Pruebas en Android | Validar en un dispositivo real | — | `npx @ionic/cli build` + `npx cap sync android` (copia la web, no cambia la configuración) + modo avión | Mismos escenarios + cierre forzado/reapertura + reinicio del teléfono + segundo plano (1.3) | [ ] |
-| 5.4 | Verificar permisos fusionados | Confirmar `ACCESS_NETWORK_STATE` | manifiesto fusionado de Gradle (solo lectura) | Revisar | Permiso presente | [ ] |
-| 5.5 | Coordinar con el plan de pruebas general | Que las pruebas del módulo entren en el informe de Ángel | — | Entregar checklist y resultados | Ángel las incluye | [!] Ángel |
+| 5.1 | Pruebas unitarias del módulo | Cobertura mínima de la lógica | nuevos `*.spec.ts` junto a `network.service.ts`, `offline-storage.service.ts`, `sync.service.ts`, `movimientos.service.ts`, `home.page.ts` | Vitest con mocks de `@capacitor/network`, `Storage` y `ApiService` (sin instalar paquetes). Base disponible: las pruebas temporales de las fases 1–3 (red, cola de escrituras, contador y arranque) se pueden portar | `npx ng test` en verde | **[~]** 20 pruebas en el repo desde `4648919` (CRUD + sync + persistencia + componentes). Faltan specs propios de red, sync al arranque/reintentos y contador → cada fase M añade las suyas; cierre en M7 |
+| 5.2 | Pruebas manuales en navegador | Escenarios A–D del diseño | — | DevTools offline/online + `simularFallo`. Ya se hizo una prueba real en Chrome para 2.3 | Checklist A (online), B (offline con pendiente), C (reconexión), D (fallo de sync) | [ ] → **M7 (M7.1)** |
+| 5.3 | Pruebas en Android | Validar en un dispositivo real | — | `npx @ionic/cli build` + `npx cap sync android` (copia la web, no cambia la configuración) + modo avión | Mismos escenarios + cierre forzado/reapertura + reinicio del teléfono + segundo plano (1.3) | [!] → **M8** (checklist I.10, A1–A4) |
+| 5.4 | Verificar permisos fusionados | Confirmar `ACCESS_NETWORK_STATE` | manifiesto fusionado de Gradle (solo lectura) | Revisar | Permiso presente | [!] → **M8** (I.10, A5) |
+| 5.5 | Coordinar con el plan de pruebas general | Que las pruebas del módulo entren en el informe de Ángel | — | Entregar checklist y resultados | Ángel las incluye | [!] Ángel → **M10** (anexo de pruebas, I.11 DOC-8; lo completa José) |
 
 ### FASE 6 — Documentación y evidencias
 
 | # | Tarea | Objetivo | Archivos | Acción | Verificación | Estado |
 |---|---|---|---|---|---|---|
-| 6.1 | Documento técnico del módulo | Explicar la arquitectura y los flujos actuales | `docs/` (nuevo archivo del módulo) | Redactar: servicios, cola, sync, disparadores, cómo probar | Revisión del usuario | [ ] |
-| 6.2 | Capturas de la app real | Evidencias con y sin conexión | `docs/evidencias/` (nuevo) | Capturas de los escenarios A–D en navegador y Android (ya hay 4 de navegador de 2.3 en el scratchpad) | Imágenes presentes | [ ] |
-| 6.3 | Actualizar diagramas si cambió el flujo | Coherencia doc/código | `documentacion/diagramas/*.mmd` | Añadir los disparadores nuevos (arranque, pendientes nuevos) | El diagrama refleja el código | [ ] |
-| 6.4 | Actualizar este plan y `equipo/JOSE_DANIEL.md` si aplica | Cierre | este archivo | Marcar estados finales | Todas las tareas propias en `[x]` | [ ] |
+| 6.1 | Documento técnico del módulo | Explicar la arquitectura y los flujos actuales | `docs/` (nuevo archivo del módulo) | Redactar: servicios, cola, sync, disparadores, cómo probar | Revisión del usuario | [ ] → **M10** (I.11 DOC-2) |
+| 6.2 | Capturas de la app real | Evidencias con y sin conexión | `docs/evidencias/` (nuevo) | Capturas de los escenarios A–D en navegador y Android (ya hay 4 de navegador de 2.3 en el scratchpad) | Imágenes presentes | [!] → **M9** (I.11 DOC-6) |
+| 6.3 | Actualizar diagramas si cambió el flujo | Coherencia doc/código | `documentacion/diagramas/*.mmd` | Añadir los disparadores nuevos (arranque, pendientes nuevos) | El diagrama refleja el código | [ ] → **M10** (I.11 DOC-4) |
+| 6.4 | Actualizar este plan y `equipo/JOSE_DANIEL.md` si aplica | Cierre | este archivo | Marcar estados finales | Todas las tareas propias en `[x]` | [~] El plan se convirtió en plan maestro en M0; `equipo/*.md` → **M10** (I.11 DOC-10) |
 
 ---
 
 ## 4. Dependencias con otros integrantes
+
+> **Nota 2026-10-12 (histórica):** esta sección se escribió cuando cada módulo esperaba a su responsable. Con la autorización del equipo, José completa los módulos pendientes. Las reglas técnicas de abajo siguen vigentes y se formalizan como contratos en **I.5**. La responsabilidad académica original está en **I.4**. Estado de cada punto: el CRUD de Kilsy ya reutiliza `OfflineStorageService` con `escribir()` y sincroniza ediciones y borrados (I.2); la API real de Ángel → M6; la interfaz/multimedia de Francisco → M3/M4; GPS/mapa de Félix → M1 (el campo `ubicacion` ya existe).
 
 ### Dependencias de Kilsy (CRUD + Almacenamiento + Requisitos)
 - El almacenamiento de movimientos vive en `core/offline/` (mío). El CRUD debe **reutilizar** `OfflineStorageService` en lugar de crear un segundo almacén, para que la cola de pendientes siga siendo única.
@@ -751,6 +1147,8 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 
 ## 7. Archivos que no debo modificar
 
+> **Nota 2026-10-12 (histórica):** esta lista regía el plan original. Desde la autorización del equipo, estos archivos **pueden** modificarse cuando una fase M lo requiera, con las condiciones de **I.5** (contratos protegidos, C10 archivos compartidos): solo en la fase que lo necesita, listados en su resultado, con regresión completa y, para `package.json`/`package-lock.json`, instalación solo con autorización explícita. Sigue vigente: no borrar las carpetas de la raíz sin la decisión D5.
+
 - `app/src/app/core/compartir/**` y `app/src/app/features/compartir/**` (Compartir Cerca / BLE).
 - `app/src/app/layout/tabs/**` (Francisco).
 - `app/src/theme/controla.scss`, `app/src/theme/compartir.scss`, `app/src/theme/variables.scss` (interfaz).
@@ -763,6 +1161,8 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 ---
 
 ## 8. Criterios para considerar mi módulo terminado
+
+> Nota 2026-10-12: estos criterios siguen siendo los del módulo de conectividad/offline. Los criterios del proyecto completo son las condiciones de completado de cada fase M (I.7) y la auditoría final M11.
 
 1. El indicador refleja el estado real de la red en navegador y Android (incluido volver del segundo plano).
 2. Un movimiento registrado sin conexión se guarda, muestra "⏳ Pendiente de sincronizar" y sobrevive al cierre de la app.
@@ -799,10 +1199,16 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-09-30 | 3 (3.4) | "Ids en vuelo": `SyncService` (`enVuelo`, `reservarEnvio`, `liberarEnvio`; solo envía lo reservado) y `registrar()` (reserva/libera su id). 52/52 con el código real, build OK, 0 errores de lint nuevos, prueba real en Chrome (casos A–D, 0 solapes) | `app/src/app/core/offline/sync.service.ts`, `app/src/app/core/offline/movimientos.service.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-01 | 3 (3.5) | Hueco BLE confirmado (`aceptar()` guarda pendiente sin avisar a la sync). `SyncService` observa el aumento de pendientes (300 ms, sin racha) y hace segunda vuelta tras un envío. Sin tocar el módulo Bluetooth. 61/61, build OK, 0 errores de lint nuevos, prueba real en Chrome con la pantalla Compartir (3 casos, 0 solapes) | `app/src/app/core/offline/sync.service.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-01 | 4 (4.0) | Validación de integración del módulo **sin cambios de código** (no se encontró ningún problema). Batería de integración I1–I6 + regresión: 67/67; build OK; 0 errores de lint nuevos; prueba de punta a punta en Chrome real con cierre/reapertura: 21/21. Fase 4 abierta por dependencias (4.1–4.4) y decisiones pendientes (4.5–4.7) | `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-05 | (equipo) | PR #2 de Ángel en `main` (`acae169`): módulo QR con ML Kit, GET simulado `/qr/consultar`, modo offline de prueba en `NetworkService`, captura GPS opcional en el alta, `Movimiento.ubicacion`, modo de prueba web en Compartir. Registrado a posteriori (2026-10-12) | `app/src/app/features/qr/*`, `core/offline/*`, `core/network/network.service.ts`, `features/inicio/*`, `features/compartir/*`, `layout/tabs/*`, `app.routes.ts`, `package.json`, Gradle, `documentacion/Modulo_Camara_API_REST.md` |
+| 2026-10-06 | (equipo) | Commit de Kilsy `bdb6bb6` (integrado en `main` el 2026-10-07 por el PR #3, `a648578`): `eliminar`/`actualizar` locales, Editar/Eliminar en Inicio, `MovimientosFormComponent` (`/nuevo`) y `MovimientosListaComponent`. Registrado a posteriori (2026-10-12) | `core/offline/*`, `features/inicio/*`, `features/movimientos/**`, `app.routes.ts` |
+| 2026-10-07 | 4 (4.2) | Merge de `origin/main` en `feature/jose-integracion` (`4648919`) con integración y **sincronización del CRUD**: `version`, tombstones `eliminado`, `actualizar`/`eliminar` por `escribir()`, `marcarSincronizados` por versión, `pendientes$` con eliminaciones, contrato de `/movimientos/lote`, corrección del monto duplicado, `crud-sincronizacion.spec.ts` (18) + providers en los specs de Kilsy. Validación registrada: 20/20 pruebas, build OK, `git diff --check` limpio. Registrado a posteriori (2026-10-12) | `core/offline/*`, `core/network/network.service.ts`, `app.component.ts`, `features/inicio/*`, `features/movimientos/**/*.spec.ts` |
+| 2026-10-12 | M0 | El documento se convierte en el **Plan Maestro de Finalización** (Parte I: estado actual, I.2 historial no registrado, U1–U10, responsabilidades, contratos C1–C10, ciclo por fase, fases M0–M12, dependencias, decisiones D1–D7, pendientes Android A1–A14, documentación y defensa). Parte II conservada con notas de redirección. Revisión de calidad del Markdown (IDs de entregables `DOC-1…DOC-10`, fecha del commit de Kilsy). M0 cerrada con commit y push autorizados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 
 ## 10. Próximo paso
+
+> **Nota 2026-10-12 (histórica):** este era el próximo paso al 2026-10-01. El próximo paso vigente está en **I.12**.
 
 **Estado:** Fases 0–3 completadas en navegador en lo que depende de mí (1.4 y 2.4 bloqueadas por Francisco y Kilsy; 3.2 cerrada sin código). Fase 4: validación de integración (4.0) completada sin cambios de código; 4.1–4.4 bloqueadas por otros integrantes; 4.5 continua; 4.6 y 4.7 esperan decisión. Todo lo funcional queda pendiente de confirmar en Android (5.3).
 
