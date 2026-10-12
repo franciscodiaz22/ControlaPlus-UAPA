@@ -70,7 +70,7 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 | U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[x]` Tabs Inicio/Compartir/QR/Media con `loadComponent` (lazy); rutas revisadas en M3; indicador de red en todas las pestañas (M3.4) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); ~~indicador de red solo en Inicio~~ (resuelto en M3.4); ~~rutas de Multimedia~~ (M4: `/tabs/multimedia`, pestaña "Media"); revisar las rutas cuando llegue el Mapa del compañero responsable de U6 (M7) | M2 `[x]`, M3 `[x]`, M4 `[x]`, M7 |
 | U3 | Componentes, interacciones y gestos | Francisco | `[x]` · Android pendiente. Filas deslizables (`ion-item-sliding`) con Editar/Eliminar, pull-to-refresh (`ion-refresher`) que sincroniza y toque en la fila para editar | Pruebas táctiles en Android (A11, A15) y evidencias (M9). Gesto personalizado solo si D1 lo exige | M3 `[x]`, M8, M9 |
 | U4 | Conectividad | José | `[x]` · **validado en Android** (emulador, Android 17 / API 37, 2026-10-12: A1–A5 OK; ver «M8 — bloque U4 adelantado») | Pendientes reales: repetir en un teléfono físico; ejecutar uno por uno los casos 1–6 de 3.2; backend real en U10 (M6) | M8 (bloque U4) `[x]` |
-| U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
+| U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5); **pruebas unitarias del protocolo y del receptor `[x]`** (2026-10-12, ver «U5 — pruebas BLE» en M7); el receptor se anuncia en el emulador | `[!]` Prueba real entre dos teléfonos Android físicos (A6). **NFC no implementado:** solo si la consigna oficial (D1) lo exige; mientras tanto, BLE como alternativa | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
 | U7 | Audio y video | Francisco (implementado por José en M4 con autorización; Francisco no trabajaba en el módulo) | `[x]` Pantalla "Media" con audio (guía narrada) y video (tutorial) locales y controles propios; validado en Chrome y en el emulador Android (2026-10-12) | Teléfono físico y evidencias (M9) | M4 `[x]` |
 | U8 | Cámara / QR | Ángel | `[~]` Escáner QR con ML Kit (Android), modo web explícito y, desde D3, "Leer QR desde una foto" con `@capacitor/camera` + ML Kit, validado en el emulador | Escáner en vivo con Google Play (A8), foto de un QR real en un teléfono (A13), pruebas manuales del usuario y evidencias | M5 |
@@ -562,6 +562,28 @@ El escáner se inyecta con `ESCANER_QR`. El escáner de Google abre su propia c�
 
     Si el PR no ha llegado al cerrar M7, U6 queda registrada como pendiente del compañero y no bloquea el resto.
 - **Dependencias:** M2–M6 (trabajo de José) y el PR de U6 del compañero (M7.7).
+
+#### U5 — pruebas BLE "Compartir Cerca" (2026-10-12)
+
+No se modificó la lógica BLE ni ningún otro módulo, y no hay dependencias nuevas.
+- **Nuevos:** `core/compartir/ble-protocolo.spec.ts` y `core/compartir/ble-receptor.service.spec.ts`.
+  - **Protocolo:** trocear y reensamblar con MTU 23, 64, 185 y 512, con tildes y ñ; paquetes de 20 bytes o menos con cabecera `[índice, total]`; un paquete fuera de orden descarta lo acumulado; un envío cortado no contamina al siguiente; paquetes sin cabecera o con total 0; límite de 1024 bytes; respuestas.
+  - **`validarMensaje`:** mensajes válidos, incluida la limpieza del concepto y del nombre, y 14 casos inválidos (firma, versión, concepto, monto, tipo y fecha), más bytes que no son JSON.
+  - **`BleReceptorService`** con un `PERIFERICO_BLE` falso y un `OfflineStorageService` en memoria:
+    - se anuncia con el servicio de Controla+;
+    - reensambla y deja el movimiento a la espera de la decisión, sin guardarlo;
+    - **aceptar:** guarda en estado `pendiente` con un id nuevo y responde "aceptado";
+    - **duplicado:** no guarda otra vez y responde "duplicado"; si cambia el monto, no es duplicado;
+    - **rechazar:** no guarda y responde "rechazado";
+    - un mensaje inválido responde "invalido";
+    - un segundo envío mientras se revisa el primero se rechaza;
+    - si el emisor ya se desconectó, aceptar igual guarda el movimiento;
+    - detener.
+  - Las pruebas no revelaron ningún error en la lógica BLE.
+- **Resultados:** 147/147 pruebas (38 nuevas), build OK, lint de los archivos nuevos OK y `git diff --check` limpio.
+- **Emulador** (`Pixel_6`, API 37, Bluetooth LE virtual): 3/3 con un solo dispositivo. La pantalla Compartir abre; "Recibir en este teléfono" inicia el periférico (`cordova-plugin-bluetoothle`) y empieza a anunciarse ("Listo para recibir"), y `dumpsys bluetooth_manager` muestra un anuncio activo; logcat sin errores. **No se pudo probar la transferencia entre dos teléfonos:** hace falta un segundo dispositivo → A6 sigue pendiente con **dos teléfonos Android físicos**.
+- **NFC:** no se implementa. Solo se hará si la consigna oficial (D1) lo exige; mientras tanto, BLE cubre U5 como alternativa.
+
 - **Riesgos:** regresiones cruzadas en `home.page.*` (archivo tocado por 3 personas, y el compañero de U6 probablemente lo toque también) y en `app.routes.ts`.
 - **Condición de completada:** todo en verde, sin errores de lint en el código de la app (o con los restantes justificados), configuración limpia; commit y push.
 
@@ -714,7 +736,7 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 | A3 | Persistencia: cierre forzado desde "recientes", reinicio del teléfono, reapertura | 2.3, 4.0 | `[x]` OK: `am force-stop` y `adb reboot` sin red. El cierre desde "recientes" se cubre con el cierre forzado |
 | A4 | Servidor caído: reintentos 6→12→24→48→60 s, un solo aviso; registro durante un reintento | 3.3, 3.4 | `[x]` OK: esperas de 6 → 24 → 48 s (el registro durante la racha cuenta como fallo y salta la de 12 s); un solo envío al recuperarse. Hubo 2 avisos, uno por registro con fallo directo; `SyncService` no añadió avisos |
 | A5 | Permiso `ACCESS_NETWORK_STATE` en el manifiesto fusionado | 5.4 | `[x]` OK (`aapt dump permissions` sobre `app-debug.apk`) |
-| A6 | BLE entre dos teléfonos: aceptar con red, sin red (→ pendiente → sync) y durante una sync | 3.5 | `[!]` |
+| A6 | BLE entre dos teléfonos: aceptar con red, sin red (→ pendiente → sync) y durante una sync | 3.5 | `[!]` **Pendiente: dos teléfonos Android físicos.** Avance (2026-10-12): lógica del receptor cubierta por pruebas unitarias, y en el emulador el receptor se anuncia por BLE sin errores (un solo dispositivo; no se puede transferir) |
 | A7 | CRUD offline en el dispositivo: editar y eliminar sin red, reconectar, sin duplicados | 4.2 | `[!]` |
 | A8 | QR real con ML Kit: QR de datos (GET) y QR con URL (Abrir enlace) | Ángel | `[!]` (la doc de Ángel registra lectura y compilación; falta la captura del enlace) |
 | A9 | GPS: diálogo de permiso, permiso denegado, captura real | U6 (compañero) | `[!]` Las define y valida el responsable de U6; José las incluye en M8 si U6 está integrada |
