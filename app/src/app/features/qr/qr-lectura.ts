@@ -3,6 +3,7 @@
  * ---------------------------------------------------------------------------
  *  - interpretarFallo(): traduce los errores del escáner (ML Kit / Capacitor)
  *    a un tipo y un mensaje en español. Cancelar no se trata como error.
+ *  - rutaParaMlKit(): ruta de una foto de @capacitor/camera → URI para ML Kit.
  *  - analizarContenido(): texto leído → vacío, enlace http(s) o texto/datos.
  *  - movimientoDesdeQr(): valida los datos de un QR de Controla+ con las
  *    mismas reglas que el resto de la app antes de crear un movimiento.
@@ -24,20 +25,49 @@ const MENSAJES_FALLO: Record<TipoFalloQr, string> = {
   error: 'No se pudo abrir la cámara o leer el código. Inténtalo de nuevo.',
 };
 
-/** Error del escáner → tipo + mensaje claro (nunca el texto técnico en inglés). */
-export function interpretarFallo(err: unknown): FalloQr {
+/** Mensajes propios de "Leer QR desde una foto" (@capacitor/camera). */
+const MENSAJES_FALLO_FOTO: Partial<Record<TipoFalloQr, string>> = {
+  cancelado: 'No se eligió ninguna foto. Pulsa «Tomar foto» o «Elegir de la galería» para intentarlo de nuevo.',
+  permiso: 'No hay permiso para usar la cámara o la galería. Actívalo en los ajustes del teléfono e inténtalo de nuevo.',
+  error: 'No se pudo obtener la foto. Inténtalo de nuevo.',
+};
+
+/**
+ * Error del escáner o de la cámara → tipo + mensaje claro (nunca el texto
+ * técnico en inglés). `origen` 'foto' usa los mensajes de la lectura desde una foto.
+ */
+export function interpretarFallo(err: unknown, origen: 'escaner' | 'foto' = 'escaner'): FalloQr {
   const texto = `${(err as { message?: unknown } | null)?.message ?? err ?? ''}`.toLowerCase();
   let tipo: TipoFalloQr = 'error';
   if (texto.includes('cancel')) {
     tipo = 'cancelado';
-  } else if (texto.includes('permission') || texto.includes('permiso') || texto.includes('denied')) {
+  } else if (
+    texto.includes('permission') ||
+    texto.includes('permiso') ||
+    texto.includes('denied') ||
+    texto.includes("access wasn't provided")
+  ) {
     tipo = 'permiso';
   } else if (texto.includes('module') || texto.includes('módulo')) {
     tipo = 'modulo';
   } else if (texto.includes('not implemented') || texto.includes('unimplemented') || texto.includes('not supported') || texto.includes('no camera')) {
     tipo = 'no-soportado';
   }
-  return { tipo, mensaje: MENSAJES_FALLO[tipo] };
+  const mensaje = (origen === 'foto' && MENSAJES_FALLO_FOTO[tipo]) || MENSAJES_FALLO[tipo];
+  return { tipo, mensaje };
+}
+
+/**
+ * Ruta de la foto (@capacitor/camera) → ruta que acepta ML Kit
+ * (readBarcodesFromImage). En Android la cámara devuelve una ruta absoluta
+ * del sistema de archivos y ML Kit necesita una URI (file:// o content://).
+ */
+export function rutaParaMlKit(uri: string | null | undefined): string | null {
+  const ruta = (uri ?? '').trim();
+  if (!ruta) {
+    return null;
+  }
+  return ruta.startsWith('/') ? `file://${ruta}` : ruta;
 }
 
 export type ContenidoQr =

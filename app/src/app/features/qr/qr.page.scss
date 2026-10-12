@@ -108,6 +108,8 @@ ion-spinner {
   text-transform: uppercase;
 
   &[data-estado='escaneando'],
+  &[data-estado='foto'],
+  &[data-estado='analizando'],
   &[data-estado='leido'] {
     color: $cian;
   }
@@ -134,6 +136,34 @@ ion-button.limpiar {
   --color: #{$muted};
   min-height: 36px;
   margin-top: 8px;
+}
+
+/* Leer QR desde una foto (D3) */
+.desde-foto {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid $borde;
+}
+
+.acciones-foto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  ion-button {
+    flex: 1 1 160px;
+    margin: 0;
+  }
+}
+
+.foto-vista {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  margin: 20px auto 0;
+  border: 1px solid $borde;
+  border-radius: 8px;
+  object-fit: contain;
 }
 
 .prueba {

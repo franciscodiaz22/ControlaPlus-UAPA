@@ -2,7 +2,7 @@
  * Pruebas de las reglas de lectura QR (U8): errores del escáner, contenido
  * leído y validación de los datos de un movimiento.
  */
-import { analizarContenido, interpretarFallo, movimientoDesdeQr } from './qr-lectura';
+import { analizarContenido, interpretarFallo, movimientoDesdeQr, rutaParaMlKit } from './qr-lectura';
 
 describe('interpretarFallo', () => {
   it('cancelar no es un error: tipo cancelado con mensaje para reintentar', () => {
@@ -23,6 +23,26 @@ describe('interpretarFallo', () => {
     expect(f.mensaje).not.toContain('java');
     expect(interpretarFallo(undefined).tipo).toBe('error');
     expect(interpretarFallo('texto').tipo).toBe('error');
+  });
+
+  it('origen "foto": mensajes de la lectura desde una foto (@capacitor/camera)', () => {
+    const cancelado = interpretarFallo(new Error("Couldn't choose media from the gallery because the process was canceled."), 'foto');
+    expect(cancelado.tipo).toBe('cancelado');
+    expect(cancelado.mensaje).toContain('No se eligió ninguna foto');
+    expect(interpretarFallo(new Error("Couldn't access your photo gallery because access wasn't provided."), 'foto').tipo).toBe('permiso');
+    expect(interpretarFallo(new Error("Couldn't take photo."), 'foto').mensaje).toBe('No se pudo obtener la foto. Inténtalo de nuevo.');
+    // Sin mensaje propio para "foto" se usa el general.
+    expect(interpretarFallo(new Error('No camera available.'), 'foto').tipo).toBe('no-soportado');
+  });
+});
+
+describe('rutaParaMlKit', () => {
+  it('ruta absoluta de Android → file://; las URI se mantienen; vacío → null', () => {
+    expect(rutaParaMlKit('/data/user/0/app/cache/a.jpg')).toBe('file:///data/user/0/app/cache/a.jpg');
+    expect(rutaParaMlKit('content://media/external/images/1')).toBe('content://media/external/images/1');
+    expect(rutaParaMlKit('file:///sdcard/a.jpg')).toBe('file:///sdcard/a.jpg');
+    expect(rutaParaMlKit('')).toBeNull();
+    expect(rutaParaMlKit(undefined)).toBeNull();
   });
 });
 

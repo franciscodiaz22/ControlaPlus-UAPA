@@ -73,7 +73,7 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
 | U7 | Audio y video | Francisco (implementado por José en M4 con autorización; Francisco no trabajaba en el módulo) | `[x]` Pantalla "Media" con audio (guía narrada) y video (tutorial) locales y controles propios; validado en Chrome y en el emulador Android (2026-10-12) | Teléfono físico y evidencias (M9) | M4 `[x]` |
-| U8 | Cámara / QR | Ángel | `[~]` QR funcional con ML Kit (Android) y modo web simulado; `@capacitor/camera` sin uso | Decidir si hace falta foto (D3); pruebas; capturas reales | M5 |
+| U8 | Cámara / QR | Ángel | `[~]` Escáner QR con ML Kit (Android), modo web explícito y, desde D3, "Leer QR desde una foto" con `@capacitor/camera` + ML Kit, validado en el emulador | Escáner en vivo con Google Play (A8), foto de un QR real en un teléfono (A13), pruebas manuales del usuario y evidencias | M5 |
 | U9 | Storage + CRUD | Kilsy | `[x]` · Android pendiente. CRUD funcional y persistente, sincronización CRUD (versionado, tombstones) y, desde M2, validación compartida, formulario de alta/edición, edición del tipo y confirmación al eliminar | Pruebas Android (A7) y documento de requisitos (M10) | M2 `[x]`, M8, M10 |
 | U10 | REST API GET + POST | Ángel | `[~]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) en código, **solo simulados** (`usarServidorSimulado: true`, dominio `.example`) | Servidor real verificable (D4), tests de `ApiService`, evidencias | M6 |
 
@@ -383,9 +383,59 @@ El usuario confirmó que Francisco (responsable original de U7) no estaba trabaj
 - evidencias definitivas para el informe (M9);
 - si se quisiera iOS/Safari, añadir una versión MP4 (H.264/AAC) del video.
 
-### M5 — U8 cámara / QR `[~]` (falta la lectura real con cámara en un dispositivo con Google Play)
+### M5 — U8 cámara / QR `[~]` (implementación completa; falta validar el escáner en vivo en un dispositivo con Google Play y las pruebas manuales del usuario)
 
-#### Resultado parcial de M5 (2026-10-12)
+#### Decisión D3 y "Leer QR desde una foto" (2026-10-12)
+
+**Decisión D3 (usuario, 2026-10-12):** U8 = escaneo QR existente **+** "Leer QR desde una foto" con `@capacitor/camera`, que ya estaba instalado. Se mantiene el escáner en vivo sin cambios.
+
+**Implementación** (sin dependencias nuevas, sin permisos nuevos, sin tocar el manifest):
+- Sección "LEER QR DESDE UNA FOTO" en la página QR con dos botones: **Tomar foto** (`Camera.takePhoto`) y **Elegir de la galería** (`Camera.chooseFromGallery`, una foto). Son las API de `@capacitor/camera` 8.1+, no la `getPhoto` en desuso.
+- La imagen se lee con `BarcodeScanner.readBarcodesFromImage` de `@capacitor-mlkit/barcode-scanning`, ya instalado. En Android usa el modelo de ML Kit **incluido en la app** (`com.google.mlkit:barcode-scanning`), así que funciona sin Google Play. En el navegador usa `BarcodeDetector` si existe.
+- El texto leído entra en el **mismo flujo** que el escáner: `procesar()` → `analizarContenido()` → enlace, o consulta GET → `movimientoDesdeQr()` / `validarMovimiento()` → "Agregar movimiento" una sola vez. No se duplicó lógica.
+- Estados nuevos: "Esperando la foto…" y "Buscando el código QR en la foto…". El resultado se marca "CONTENIDO LEÍDO · DESDE UNA FOTO" y muestra una vista previa de la foto.
+- Errores en español: cancelar la cámara o la galería ("No se eligió ninguna foto"); permiso de cámara o galería; sin cámara; error al obtener la foto; imagen inválida o error de ML Kit ("No se pudo procesar la imagen…"); foto sin QR ("No se encontró ningún código QR en la foto…"); QR vacío; QR con datos de movimiento inválidos (aviso, sin "Agregar movimiento").
+- En un navegador sin `BarcodeDetector` (Chrome en Windows) se explica que la lectura desde una foto funciona en la app Android y no se abre el selector. No hay simulación.
+- La foto **no se guarda** (C8). La cámara y el selector la dejan en la caché de la app; aquí solo se usa su `webPath` para la vista previa, que se quita con "Limpiar" o al salir.
+- No hacen falta permisos. La cámara se abre con la app de cámara del sistema, porque `CAMERA` no está declarado y el plugin no lo pide, y la galería usa el selector de fotos del sistema.
+- Se inyecta con `CAMARA_QR`, igual que `ESCANER_QR`. En `qr-lectura.ts`, `interpretarFallo(err, 'foto')` tiene mensajes propios para la foto y `rutaParaMlKit()` convierte la ruta absoluta que devuelve la cámara en Android en `file://…`, la URI que necesita ML Kit.
+
+**Archivos** (solo `features/qr/`): `qr.page.ts`, `qr.page.html`, `qr.page.scss`, `qr-lectura.ts`, `qr.page.spec.ts` y `qr-lectura.spec.ts`. No se modificó `@capacitor/camera` (`package.json`), el manifest ni ningún otro módulo.
+
+**Pruebas:**
+- **Unitarias:** 102/102 (13 nuevas). Cubren: foto con QR → mismo flujo GET y una sola alta; enlace; cancelación de cámara y galería; foto sin QR; imagen inválida; QR inválido; permiso y errores de cámara; Limpiar; el escáner en vivo sigue funcionando; web sin y con `BarcodeDetector`; `rutaParaMlKit`; mensajes de `interpretarFallo(…, 'foto')`.
+- **Build:** OK. **`git diff --check`:** limpio.
+- **Lint:** `features/qr/` sin errores. `ng lint` sigue mostrando 20 errores **anteriores** en archivos ajenos a U8 (`core/network`, `core/offline/offline-storage.service.ts` y `features/compartir`), que no se tocaron.
+- **Chrome** (headless por CDP, 412 px, clics reales): **10/10**. Sección y botones visibles sin desbordamiento; Chrome en Windows no tiene `BarcodeDetector` (tampoco con las funciones experimentales), así que "Tomar foto" y "Elegir de la galería" lo explican y no abren el selector; "Escanear QR" y el QR de ejemplo siguen intactos; Limpiar; navegación; sin errores de consola.
+- **Android** (emulador `Pixel_6`, Android 17 / API 37, imagen Google APIs sin Play Store; build + `cap sync` + `assembleDebug` + `adb install -r`; toques reales en el WebView y en las pantallas del sistema con `adb input tap`; QR de prueba generados fuera del repositorio y copiados a `Pictures/ControlaPlusPruebas` del emulador). Resultados acumulados de las dos últimas ejecuciones:
+  - pantalla con la sección de foto;
+  - el selector de fotos del sistema se abre sin pedir permisos; cancelarlo → "No se eligió ninguna foto";
+  - QR de movimiento → contenido, GET simulado y "Agregar movimiento" una sola vez; aparece una vez en Inicio;
+  - QR de enlace → "Abrir enlace";
+  - QR de texto → contenido + GET;
+  - QR con datos inválidos → aviso, sin "Agregar movimiento";
+  - imagen sin QR → "No se encontró ningún código QR";
+  - vista previa visible en todos los casos;
+  - "Tomar foto" abre la cámara del sistema (`com.android.camera2`); cancelarla → "No se eligió ninguna foto";
+  - foto **real** de la cámara emulada (escena virtual, sin QR) → se procesa y avisa que no hay QR;
+  - "Escanear QR" sigue igual: sin Google Play avisa que no se pudo instalar el módulo;
+  - logcat sin errores JS de la app. Las únicas líneas `E/Capacitor/Console` son el registro de depuración del puente de Capacitor (`native-bridge.js`, línea 330) para las llamadas rechazadas por cancelación, que la app captura.
+
+  En la última ejecución, un toque automatizado sobre el selector no seleccionó la foto: 13/16, con los 3 fallos encadenados a ese toque. Esos 3 casos ya habían pasado en la ejecución anterior con el mismo código. Al elegir de la galería, el selector de este emulador pide confirmar con **Done** después de tocar la foto.
+
+**Limitaciones del emulador:**
+- Sin Play Store ni cuenta de Google, el módulo del escáner de Google no se instala, así que el escaneo en vivo con `BarcodeScanner.scan()` no se puede probar aquí.
+- La cámara emulada muestra una escena virtual. Para fotografiar un QR real habría que configurar una imagen en la cámara virtual del emulador o usar un teléfono físico.
+
+**Pendiente:**
+- **Pruebas manuales del usuario** en el emulador (la app quedó abierta en la pantalla QR): elegir de la galería cada imagen de `ControlaPlusPruebas`, tomar una foto y cancelar.
+- **A8:** escaneo en vivo con el escáner de Google (QR de datos y QR con URL), con cancelación, en un teléfono físico o en un emulador con Google Play.
+- **A13:** "Tomar foto" de un QR real impreso o en pantalla, en un teléfono físico.
+- Evidencias de U8 → M9.
+
+**Estado:** implementación de M5/U8 **completa** según D3. Validación: automática y en emulador completa; A8, A13 en teléfono físico y la revisión manual del usuario siguen pendientes. Por eso M5 sigue `[~]`.
+
+#### Resultado parcial de M5 (2026-10-12) — escáner en vivo (antes de D3)
 
 **Implementación** (sin dependencias nuevas). Se completó la página QR existente de Ángel:
 - estados visibles del escáner;
@@ -412,7 +462,7 @@ El escáner se inyecta con `ESCANER_QR`. El escáner de Google abre su propia c�
 
 **Pendiente:**
 - A4/A5/A7: lectura real con cámara, resultado y cancelación en un teléfono físico o en un emulador con Google Play y cuenta.
-- Decisión del usuario: añadir "Leer QR desde una foto" (`@capacitor/camera`, ya instalado, más el ML Kit incluido en la app). Se podría probar en este emulador y resolvería D3.
+- ~~Decisión del usuario: añadir "Leer QR desde una foto"~~ → decidida e implementada (D3, ver arriba).
 
 - **Objetivo:** cerrar U8 según la decisión D3.
 - **Requisitos:** U8.
@@ -605,7 +655,7 @@ M0 ──► M2 (CRUD) ──► M3 (navegación/gestos) ───────�
 |---|---|---|---|---|---|
 | D1 | Consigna oficial del proyecto final | El usuario aporta el documento o la rúbrica (Canvas) / se usa la lista U1–U10 acordada | Aportar la consigna. En la carpeta del curso solo están "Trabajo final" y "Faces del proyecto", que son material de **otro estudiante** (app "MiBolsillo", 2025), y en Descargas la rúbrica es de **otra asignatura** (IA ISW309) | M3 (gestos), M5 (U8), M6 (U10), M11 | `[!]` |
 | D2 | Librería de mapa | Leaflet + OpenStreetMap (sin clave de API) / `@capacitor/google-maps` (clave y facturación de Google) | Se aprobó Leaflet + OSM **solo para la implementación temporal de M1, ya revertida**. **Ya no es una decisión de José:** la librería la elige el responsable de U6 | — | Fuera de alcance (U6 del compañero) |
-| D3 | Alcance de U8 | Solo QR / QR + foto con `@capacitor/camera` | Según D1; si no se aclara, añadir la foto de recibo guardada solo en el teléfono (cubre "cámara" sin ambigüedad) | M5 | `[ ]` |
+| D3 | Alcance de U8 | Solo QR / QR + foto con `@capacitor/camera` | **Decidido (usuario, 2026-10-12):** escaneo QR existente + "Leer QR desde una foto" con `@capacitor/camera` (tomar foto o elegir de la galería) y ML Kit; la foto no se guarda | M5 | `[x]` |
 | D4 | Backend de U10 | A: servidor propio en Node puro (`server/`, sin dependencias) / B: API pública de pruebas (JSONPlaceholder; su POST **no persiste**) / A + B | A (real y defendible), con el modo simulado solo para demos sin red | M6 | `[ ]` |
 | D5 | Carpetas duplicadas de la raíz | Conservar como históricas con una nota en su README / mover a `historico/` / eliminar | Conservar con una nota (sin borrar) | M7 | `[ ]` (antigua 4.7) |
 | D6 | `android.overridePathCheck=true` | Mantener / quitar y compilar desde una ruta ASCII | Quitar si la compilación en una ruta ASCII funciona | M7/M8 | `[ ]` |
@@ -630,7 +680,7 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 | A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | U6 (compañero) | `[!]` Ídem A9 |
 | A11 | Gestos táctiles reales (deslizar la fila → Editar/Eliminar, tocar la fila, pull-to-refresh con y sin red) | M3 | `[!]` |
 | A12 | Audio y video locales en el WebView de Android | M4 | `[x]` OK en el emulador `Pixel_6` (Android 17 / API 37), 2026-10-12: carga, reproducción, controles, exclusividad, pausa al salir y pantalla completa (22/22, ver «Resultado de M4»). Pendiente: teléfono físico |
-| A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[!]` |
+| A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[~]` En el emulador (2026-10-12): la cámara y el selector del sistema se abren sin pedir permisos, la cancelación funciona y se procesa una foto real de la cámara emulada (sin QR); la galería lee los QR de prueba y muestra la vista previa. Falta: foto de un QR real en un teléfono físico |
 | A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[!]` |
 | A15 | WebView: soporte de `:has()` (Android WebView 105 o posterior); toasts por encima de la barra y del banner offline; banner de conectividad sobre la barra en todas las pestañas | M3 | `[!]` |
 

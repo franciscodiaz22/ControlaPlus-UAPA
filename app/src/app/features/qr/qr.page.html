@@ -40,12 +40,34 @@
       </ion-button>
     }
 
+    <!-- Leer QR desde una foto (D3): @capacitor/camera + ML Kit -->
+    <section class="desde-foto" aria-label="Leer QR desde una foto">
+      <p class="eyebrow">LEER QR DESDE UNA FOTO</p>
+      <div class="acciones-foto">
+        <ion-button class="secundario" fill="outline" (click)="leerDesdeFoto('camara')" [disabled]="procesando()">
+          <ion-icon name="camera-outline" slot="start"></ion-icon>
+          Tomar foto
+        </ion-button>
+        <ion-button class="secundario" fill="outline" (click)="leerDesdeFoto('galeria')" [disabled]="procesando()">
+          <ion-icon name="images-outline" slot="start"></ion-icon>
+          Elegir de la galería
+        </ion-button>
+      </div>
+    </section>
+
+    @if (fotoVista()) {
+      <img class="foto-vista" [src]="fotoVista()" alt="Foto analizada para buscar el código QR" />
+    }
+
     @if (resultado()) {
       <section class="resultado" aria-live="polite">
         <p class="eyebrow">
           CONTENIDO LEÍDO
           @if (esEjemplo()) {
             · <span class="prueba">EJEMPLO, SIN CÁMARA</span>
+          }
+          @if (desdeFoto()) {
+            · DESDE UNA FOTO
           }
         </p>
         <pre>{{ resultado() }}</pre>
