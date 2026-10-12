@@ -20,7 +20,25 @@ La pantalla QR invoca el escáner de Google ML Kit mediante el plugin de Capacit
 
 Durante la puesta en marcha Android también fue necesario resolver problemas del entorno de desarrollo (ADB no estaba en `PATH`, no se encontraba Java, Gradle no admitía el Java 25 incluido con Android Studio y el proyecto estaba en una ruta con caracteres no ASCII). Al investigar por qué no respondían los botones se encontró un `ion-router-outlet` redundante dentro de la plantilla de pestañas; al retirarlo, los eventos táctiles volvieron a llegar a los controles.
 
-En la configuración actual `environment.usarServidorSimulado` es `true` y `environment.apiUrl` utiliza el dominio de ejemplo `https://api.controlaplus.example/v1`. Por tanto, las respuestas GET y POST actuales son simuladas: la interfaz y el flujo se pueden probar, pero esto no acredita una transacción contra un backend real. Para la integración real se debe configurar la URL desplegada y desactivar la simulación.
+### API simulada y servidor real (actualización M6, 2026-10-12)
+
+La app tiene dos modos de API, y cada respuesta indica de cuál proviene (`origen: 'simulado'` o `origen: 'servidor'`):
+
+| Modo | Cómo se activa | Qué ocurre |
+|---|---|---|
+| **API simulada** (por defecto) | `ng serve`, `ng build` (`environment.ts` / `environment.prod.ts`: `usarServidorSimulado: true`) | `ApiService` responde localmente, sin red: GET en ~500 ms y POST en ~900 ms. Sirve para demostrar la interfaz y el flujo sin servidor, pero **no acredita** una transacción real. Los avisos dicen "API simulada" y la respuesta GET se titula "API SIMULADA". |
+| **Servidor real** | `ng serve -c servidor` / `ng build -c servidor` (`environment.servidor.ts`: `apiUrl = http://localhost:3000`, `usarServidorSimulado: false`) | `HttpClient` hace GET y POST reales contra el servidor propio de pruebas `server/servidor.mjs`. La respuesta GET se titula "API" y lleva `"origen": "servidor"`, y el servidor registra cada petición en su consola. |
+
+**Arranque del servidor real** (Node.js puro, sin dependencias; detalles en `server/README.md`):
+
+```bash
+node server/servidor.mjs                 # desde la raíz del repositorio → http://localhost:3000
+cd app && npx ng serve -c servidor       # navegador
+# Android: npx ng build -c servidor && npx cap sync android, instalar el APK y
+adb reverse tcp:3000 tcp:3000            # el localhost:3000 del teléfono llega al equipo
+```
+
+El servidor expone `GET /qr/consultar?codigo=`, `GET /movimientos` (para comprobar lo recibido) y `POST /movimientos/lote`. El lote es idempotente por `id`: ignora versiones antiguas, borra con `eliminado: true` y rechaza con `400`, sin guardar nada, un lote con elementos inválidos. Los datos se guardan en `server/datos.json`. En Android, `network_security_config.xml` permite HTTP sin cifrar **solo** hacia `localhost` y `10.0.2.2`.
 
 ## 5.4.4 Tecnologías utilizadas
 
@@ -28,7 +46,8 @@ En la configuración actual `environment.usarServidorSimulado` es `true` y `envi
 - Capacitor 8 como puente entre la aplicación web y las capacidades nativas del teléfono.
 - `@capacitor-mlkit/barcode-scanning` para detectar códigos QR con Google ML Kit.
 - `@capacitor/browser` para abrir de forma explícita enlaces HTTP(S) leídos.
-- `HttpClient` de Angular para las solicitudes REST GET y POST cuando se desactiva el modo simulado.
+- `HttpClient` de Angular para las solicitudes REST GET y POST cuando se desactiva el modo simulado (configuración `servidor`).
+- Node.js puro (`node:http`, `node:fs`) para el servidor de pruebas `server/servidor.mjs`.
 - Ionic Storage, RxJS y los servicios de red y sincronización para conservar movimientos y gestionar el flujo offline-first.
 
 ## 5.4.5 Implementación
@@ -87,10 +106,9 @@ private detectarEnlace(texto: string): string | null {
 
 ```ts
 const respuesta = await firstValueFrom(
-  this.http.get<Omit<ConsultaQr, 'origen'>>(
-    `${environment.apiUrl}/qr/consultar`,
-    { params: { codigo } },
-  ),
+  this.http
+    .get<Omit<ConsultaQr, 'origen'>>(`${this.config.apiUrl}/qr/consultar`, { params: { codigo } })
+    .pipe(timeout(LIMITE_PETICION_MS)),
 );
 return { ...respuesta, origen: 'servidor' };
 ```
@@ -99,16 +117,16 @@ return { ...respuesta, origen: 'servidor' };
 
 ```ts
 await firstValueFrom(
-  this.http.post(`${environment.apiUrl}/movimientos/lote`, movimientos),
+  this.http.post(`${this.config.apiUrl}/movimientos/lote`, movimientos).pipe(timeout(LIMITE_PETICION_MS)),
 );
 ```
 
-Ambas llamadas HTTP se ejecutan únicamente cuando `environment.usarServidorSimulado` es `false`. Con el valor actual `true`, `ApiService` responde localmente y no envía esas solicitudes al servidor.
+`this.config` (token `CONFIG_API`) toma `apiUrl` y `usarServidorSimulado` del environment activo. Ambas llamadas HTTP se ejecutan únicamente cuando `usarServidorSimulado` es `false`, es decir, con la configuración `servidor`. Con la configuración por defecto, `ApiService` responde localmente y no envía esas solicitudes. Cada petición real tiene un límite de 10 s para que un servidor que no responde cuente como fallo y la sincronización reintente.
 
 La ruta de prueba del POST también permite simular un fallo sin conectarse a un servicio:
 
 ```ts
-if (environment.usarServidorSimulado) {
+if (this.config.usarServidorSimulado) {
   await firstValueFrom(timer(900));
   if (this.simularFallo) {
     throw new Error('HTTP 503 Service Unavailable (simulado)');
@@ -131,7 +149,7 @@ Las capturas deben tomarse de la aplicación instalada en el teléfono y añadir
 
 **Figura 22. Solicitud POST**
 
-*[Insertar captura del movimiento agregado y del mensaje de resultado. Con la configuración actual, la evidencia corresponde a `API simulada (POST)`; para afirmar que hubo una solicitud real, repetir la prueba con el backend configurado y `usarServidorSimulado: false`.]*
+*[Insertar captura del movimiento agregado y del mensaje de resultado. Con la configuración por defecto, la evidencia corresponde a `API simulada (POST)`. Para la evidencia real, usar la configuración `servidor` con `server/servidor.mjs` en marcha y capturar también la consola del servidor (`POST /movimientos/lote → 200`) y `GET /movimientos` con el movimiento recibido.]*
 
 ## 5.4.8 Decisiones técnicas
 
@@ -150,7 +168,7 @@ Las capturas deben tomarse de la aplicación instalada en el teléfono y añadir
 - **Ruta de Windows con caracteres no ASCII:** Gradle rechazó la ruta `Programación Dispositivos móviles`. Para completar la compilación se añadió `android.overridePathCheck=true` en `app/android/gradle.properties`. La alternativa más robusta para futuras compilaciones es usar una ruta ASCII.
 - **Botones del contenido no respondían:** el análisis de eventos mostró que el `ion-router-outlet` extra dentro de `ion-tabs` recibía el toque por encima del botón. Se retiró ese outlet y su importación; después la compilación Angular pasó y una pulsación real del FAB abrió la alerta de movimiento.
 - **Un QR con URL mostraba el texto y respuesta GET:** el flujo inicial enviaba todo `rawValue` a `consultarQr`. Se añadió detección HTTP(S), el botón **Abrir enlace** y Capacitor Browser. La instalación del APK que incluye esta función se ejecutó desde la terminal con código de salida 0; queda por documentar una captura del enlace abierto.
-- **Posible confusión entre API simulada y real:** `usarServidorSimulado` sigue activado y `apiUrl` conserva un dominio `.example`. Se dejó explícito que GET y POST son simulados. ADB informó que el teléfono se desconectó en uno de los intentos automáticos; posteriormente el usuario ejecutó `adb install -r` y la terminal mostró código de salida 0.
+- **Posible confusión entre API simulada y real:** en la configuración por defecto `usarServidorSimulado` sigue activado y `apiUrl` conserva un dominio `.example`, así que GET y POST son simulados. Desde M6 existe el servidor real `server/servidor.mjs` y la configuración `servidor`, que no usa el dominio `.example`. ADB informó que el teléfono se desconectó en uno de los intentos automáticos; posteriormente el usuario ejecutó `adb install -r` y la terminal mostró código de salida 0.
 
 ## 5.4.10 Resultado
 
@@ -158,4 +176,8 @@ El trabajo completó la lectura nativa de QR y verificó en el teléfono que el 
 
 `npm run build` terminó correctamente tras los cambios de Angular. Capacitor sincronizó los plugins y Gradle generó correctamente el APK actualizado, incluido `@capacitor/browser`; el comando de instalación ejecutado posteriormente por el usuario terminó con código de salida 0.
 
-**Alcance verificado y pendiente:** la lectura QR y la compilación Android se realizaron; el APK actualizado se instaló. La prueba de abrir un QR HTTP(S) con el botón nuevo aún debe fotografiarse. GET y POST continúan en modo simulado; para probar el backend real hay que configurar un endpoint disponible, cambiar `usarServidorSimulado` a `false` y validar las respuestas HTTP. También faltan por incorporar las capturas auténticas de las Figuras 20–22.
+**Alcance verificado y pendiente:** la lectura QR y la compilación Android se realizaron; el APK actualizado se instaló. La prueba de abrir un QR HTTP(S) con el botón nuevo aún debe fotografiarse. **GET y POST reales (M6, 2026-10-12):** con `server/servidor.mjs` y la configuración `servidor` se verificó lo siguiente:
+- **Navegador (Chrome):** registro → `POST /movimientos/lote` → aparece en `GET /movimientos`; QR → `GET /qr/consultar` con `origen: servidor`; sin red → pendiente → al reconectar se envía el lote; edición y eliminación llegan al servidor; con el servidor caído el movimiento queda pendiente y se envía al volver; sin duplicados.
+- **Emulador Android** (por `adb reverse`): GET, POST y lote de pendientes tras el modo avión, sin errores de HTTP sin cifrar ni de contenido mixto.
+
+La configuración por defecto sigue siendo la API simulada. Faltan las capturas auténticas de las Figuras 20–22 y la prueba en un teléfono físico.

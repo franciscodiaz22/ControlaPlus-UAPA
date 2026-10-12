@@ -75,7 +75,7 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 | U7 | Audio y video | Francisco (implementado por José en M4 con autorización; Francisco no trabajaba en el módulo) | `[x]` Pantalla "Media" con audio (guía narrada) y video (tutorial) locales y controles propios; validado en Chrome y en el emulador Android (2026-10-12) | Teléfono físico y evidencias (M9) | M4 `[x]` |
 | U8 | Cámara / QR | Ángel | `[~]` Escáner QR con ML Kit (Android), modo web explícito y, desde D3, "Leer QR desde una foto" con `@capacitor/camera` + ML Kit, validado en el emulador | Escáner en vivo con Google Play (A8), foto de un QR real en un teléfono (A13), pruebas manuales del usuario y evidencias | M5 |
 | U9 | Storage + CRUD | Kilsy | `[x]` · Android pendiente. CRUD funcional y persistente, sincronización CRUD (versionado, tombstones) y, desde M2, validación compartida, formulario de alta/edición, edición del tipo y confirmación al eliminar | Pruebas Android (A7) y documento de requisitos (M10) | M2 `[x]`, M8, M10 |
-| U10 | REST API GET + POST | Ángel | `[~]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) en código, **solo simulados** (`usarServidorSimulado: true`, dominio `.example`) | Servidor real verificable (D4), tests de `ApiService`, evidencias | M6 |
+| U10 | REST API GET + POST | Ángel | `[x]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) reales contra `server/servidor.mjs` con la configuración `servidor`, verificados en Chrome y en el emulador Android; la API simulada sigue por defecto | Teléfono físico (M8) y evidencias (M9) | M6 `[x]` |
 
 ## I.4 Responsabilidad académica original
 
@@ -478,7 +478,48 @@ El escáner se inyecta con `ESCANER_QR`. El escáner de Google abre su propia c�
 - **Evidencias:** escáner abierto, contenido leído, enlace detectado (pendiente según la doc de Ángel), foto capturada y su vista previa (si aplica).
 - **Condición de completada:** U8 cubierta según D3, con pruebas y build en verde; commit y push.
 
-### M6 — U10 REST API GET + POST `[ ]`
+### M6 — U10 REST API GET + POST `[x]` (navegador y emulador Android; teléfono físico → M8)
+
+#### Resultado de M6 (2026-10-12)
+
+**D4 = A** (aprobada por el usuario): servidor propio en Node.js puro. Sin dependencias nuevas.
+
+**Implementación:**
+- **`server/servidor.mjs`** (nuevo), más `server/README.md` y `server/.gitignore` para `datos.json`:
+  - `GET /qr/consultar?codigo=`: reconoce el JSON de un movimiento y los códigos `CP-CAFE`, `CP-TRANSPORTE` y `CP-BECA`; sin `codigo` → 400;
+  - `GET /movimientos`;
+  - `POST /movimientos/lote` con el contrato de `ApiService`: idempotente por `id`, ignora y reporta las versiones antiguas (también tras una eliminación) y aplica `eliminado`, sin error si el `id` no existe;
+  - validación del lote entero (400 con `detalles`, sin guardar nada) y 400 si el cuerpo no es JSON o no es una lista;
+  - el lote se aplica sobre una copia que solo se adopta si se guardó en disco;
+  - persistencia en JSON con escritura atómica, CORS (incluido `OPTIONS` → 204), 404 y 405, y registro de cada petición en consola.
+- **Configuración Angular `servidor`:** `environment.servidor.ts` (`apiUrl: http://localhost:3000`, `usarServidorSimulado: false`) y `angular.json` (`build` y `serve`). La configuración por defecto sigue en modo simulado y su build no contiene `localhost:3000`.
+- **`ApiService`**, cambios mínimos y mismos métodos y firmas para `SyncService`, `MovimientosService` y QR:
+  - la configuración se lee del token `CONFIG_API` (por defecto, el environment activo), lo que permite probar los dos modos;
+  - las peticiones reales tienen un límite de 10 s (`LIMITE_PETICION_MS`) para que un servidor que no responde cuente como fallo y la sincronización reintente.
+  - No se añadió `GET /movimientos` a la app: la verificación se hace contra el servidor.
+- **Android:** `res/xml/network_security_config.xml` permite HTTP sin cifrar **solo** hacia `localhost` y `10.0.2.2`; el resto exige HTTPS. Se referencia desde `AndroidManifest.xml`.
+- **Documentación:** `documentacion/Modulo_Camara_API_REST.md` distingue la API simulada de la real y explica el arranque.
+
+**Pruebas:**
+- **Unitarias:** 109/109. Las 7 nuevas están en `api.service.spec.ts` (`HttpTestingController`): GET con URL y `codigo`, código no encontrado, POST con URL, método y cuerpo, error HTTP 503 y 400, servidor inalcanzable, y modo simulado y `simularFallo` sin HTTP.
+- **Build:** OK, por defecto y con `-c servidor`. **Lint** de los archivos tocados: OK. **`git diff --check`:** limpio.
+- **Servidor** (peticiones HTTP reales): **18/18**. GET con catálogo, JSON, código desconocido y sin `codigo`; POST; idempotencia; versión antigua ignorada; eliminado; una versión antigua no resucita un eliminado; eliminar un id inexistente; cuerpo no JSON, cuerpo que no es lista y lote con elementos inválidos (400, sin guardar nada); CORS y `OPTIONS`; 405 y 404.
+- **Chrome** (headless por CDP, `ng serve -c servidor`, servidor real): **14/14**.
+  - Registro → POST real → aparece en `GET /movimientos`, con aviso real (no "simulada").
+  - QR → GET real ("RESPUESTA GET · API", `"origen": "servidor"`).
+  - Sin red → pendiente → reconexión → lote → sin pendientes.
+  - Edición → versión nueva en el servidor; eliminación → desaparece.
+  - Servidor caído → pendiente → servidor arriba → el reintento lo envía.
+  - Sin duplicados; sin excepciones JS.
+- **Android** (emulador `Pixel_6`, API 37, `ng build -c servidor` + `adb reverse tcp:3000 tcp:3000`): **6/6**. GET desde el WebView con `origen: servidor`; POST en línea; modo avión → 2 pendientes que no llegan → red → un único lote de 2; logcat sin errores de HTTP sin cifrar, contenido mixto ni JS. Al terminar se reinstaló la build por defecto (simulada) y se quitó el `adb reverse`.
+
+**Hallazgos durante las pruebas:**
+1. **Servidor (corregido):** cuando no se podía escribir el archivo de datos, el lote quedaba aplicado en memoria aunque se respondía 500. Ahora se crea la carpeta y el lote solo se adopta si se guardó.
+2. **Sincronización (observación, no modificada en M6):** en 1 de 4 ejecuciones de Chrome, la eliminación hecha justo después de una edición que aún se estaba enviando tardó más de 20 s en llegar al servidor. En las otras 3 llegó en menos de 1 s. Queda para revisar en M7/M8 (C4).
+
+**Pendiente:** A14 en un teléfono físico, por USB con `adb reverse` (M8); evidencias con la consola del servidor (M9).
+
+**Plan original de M6** (se conserva):
 
 - **Objetivo:** demostrar GET y POST contra un servidor **real y verificable**, sin inventar un backend.
 - **Requisitos:** U10. Antigua 4.1.
@@ -656,7 +697,7 @@ M0 ──► M2 (CRUD) ──► M3 (navegación/gestos) ───────�
 | D1 | Consigna oficial del proyecto final | El usuario aporta el documento o la rúbrica (Canvas) / se usa la lista U1–U10 acordada | Aportar la consigna. En la carpeta del curso solo están "Trabajo final" y "Faces del proyecto", que son material de **otro estudiante** (app "MiBolsillo", 2025), y en Descargas la rúbrica es de **otra asignatura** (IA ISW309) | M3 (gestos), M5 (U8), M6 (U10), M11 | `[!]` |
 | D2 | Librería de mapa | Leaflet + OpenStreetMap (sin clave de API) / `@capacitor/google-maps` (clave y facturación de Google) | Se aprobó Leaflet + OSM **solo para la implementación temporal de M1, ya revertida**. **Ya no es una decisión de José:** la librería la elige el responsable de U6 | — | Fuera de alcance (U6 del compañero) |
 | D3 | Alcance de U8 | Solo QR / QR + foto con `@capacitor/camera` | **Decidido (usuario, 2026-10-12):** escaneo QR existente + "Leer QR desde una foto" con `@capacitor/camera` (tomar foto o elegir de la galería) y ML Kit; la foto no se guarda | M5 | `[x]` |
-| D4 | Backend de U10 | A: servidor propio en Node puro (`server/`, sin dependencias) / B: API pública de pruebas (JSONPlaceholder; su POST **no persiste**) / A + B | A (real y defendible), con el modo simulado solo para demos sin red | M6 | `[ ]` |
+| D4 | Backend de U10 | A: servidor propio en Node puro (`server/`, sin dependencias) / B: API pública de pruebas (JSONPlaceholder; su POST **no persiste**) / A + B | **Decidido (usuario, 2026-10-12): A.** `server/servidor.mjs` en Node puro y configuración `servidor`; el modo simulado sigue por defecto para demos sin red | M6 | `[x]` |
 | D5 | Carpetas duplicadas de la raíz | Conservar como históricas con una nota en su README / mover a `historico/` / eliminar | Conservar con una nota (sin borrar) | M7 | `[ ]` (antigua 4.7) |
 | D6 | `android.overridePathCheck=true` | Mantener / quitar y compilar desde una ruta ASCII | Quitar si la compilación en una ruta ASCII funciona | M7/M8 | `[ ]` |
 | D7 | Numeración de las fases M0–M12 y orden M1→M2→M3 | — | Adoptada en M0. **Actualizada el 2026-10-12:** se mantiene la numeración, M1 sale del trabajo de José y el orden pasa a M0→M2→M3→…→M12 | — | `[x]` |
@@ -681,7 +722,7 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 | A11 | Gestos táctiles reales (deslizar la fila → Editar/Eliminar, tocar la fila, pull-to-refresh con y sin red) | M3 | `[!]` |
 | A12 | Audio y video locales en el WebView de Android | M4 | `[x]` OK en el emulador `Pixel_6` (Android 17 / API 37), 2026-10-12: carga, reproducción, controles, exclusividad, pausa al salir y pantalla completa (22/22, ver «Resultado de M4»). Pendiente: teléfono físico |
 | A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[~]` En el emulador (2026-10-12): la cámara y el selector del sistema se abren sin pedir permisos, la cancelación funciona y se procesa una foto real de la cámara emulada (sin QR); la galería lee los QR de prueba y muestra la vista previa. Falta: foto de un QR real en un teléfono físico |
-| A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[!]` |
+| A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[x]` OK en el emulador `Pixel_6` (API 37) con `adb reverse`, 2026-10-12: GET con `origen: servidor`, POST en línea y lote de 2 tras el modo avión, sin errores de HTTP sin cifrar ni contenido mixto (ver «Resultado de M6»). Pendiente: teléfono físico (M8) |
 | A15 | WebView: soporte de `:has()` (Android WebView 105 o posterior); toasts por encima de la barra y del banner offline; banner de conectividad sobre la barra en todas las pestañas | M3 | `[!]` |
 
 ## I.11 Documentación, evidencias, README y defensa

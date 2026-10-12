@@ -5,12 +5,31 @@
  * `environment.usarServidorSimulado = true` responde localmente tras ~900 ms,
  * lo que permite probar el módulo sin un servidor real y forzar fallos desde
  * la interfaz para verificar el reintento automático.
+ *
+ * Con `usarServidorSimulado = false` (configuración `servidor`, M6) hace GET y
+ * POST reales contra `apiUrl` (server/servidor.mjs). Cada petición real tiene
+ * un límite de tiempo para que un servidor que no responde cuente como fallo
+ * y la sincronización pueda reintentar.
  */
-import { Injectable, inject } from '@angular/core';
+import { Injectable, InjectionToken, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, timer } from 'rxjs';
+import { firstValueFrom, timeout, timer } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Movimiento } from './movimiento.model';
+
+export interface ConfigApi {
+  apiUrl: string;
+  usarServidorSimulado: boolean;
+}
+
+/** Configuración de la API (por defecto, la del environment activo). */
+export const CONFIG_API = new InjectionToken<ConfigApi>('CONFIG_API', {
+  providedIn: 'root',
+  factory: () => ({ apiUrl: environment.apiUrl, usarServidorSimulado: environment.usarServidorSimulado }),
+});
+
+/** Límite de una petición real; pasado este tiempo cuenta como fallo. */
+export const LIMITE_PETICION_MS = 10000;
 
 export interface ConsultaQr {
   codigo: string;
@@ -22,12 +41,13 @@ export interface ConsultaQr {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
+  private readonly config = inject(CONFIG_API);
 
   /** Solo para demostración: hace fallar el envío simulado. */
   simularFallo = false;
 
   async consultarQr(codigo: string): Promise<ConsultaQr> {
-    if (environment.usarServidorSimulado) {
+    if (this.config.usarServidorSimulado) {
       await firstValueFrom(timer(500));
       let datos: ConsultaQr['datos'];
       try {
@@ -46,7 +66,9 @@ export class ApiService {
     }
 
     const respuesta = await firstValueFrom(
-      this.http.get<Omit<ConsultaQr, 'origen'>>(`${environment.apiUrl}/qr/consultar`, { params: { codigo } }),
+      this.http
+        .get<Omit<ConsultaQr, 'origen'>>(`${this.config.apiUrl}/qr/consultar`, { params: { codigo } })
+        .pipe(timeout(LIMITE_PETICION_MS)),
     );
     return { ...respuesta, origen: 'servidor' };
   }
@@ -65,7 +87,7 @@ export class ApiService {
    * El servidor simulado acepta el lote sin mirar su contenido.
    */
   async enviarMovimientos(movimientos: Movimiento[]): Promise<void> {
-    if (environment.usarServidorSimulado) {
+    if (this.config.usarServidorSimulado) {
       await firstValueFrom(timer(900));
       if (this.simularFallo) {
         throw new Error('HTTP 503 Service Unavailable (simulado)');
@@ -73,6 +95,8 @@ export class ApiService {
       return;
     }
 
-    await firstValueFrom(this.http.post(`${environment.apiUrl}/movimientos/lote`, movimientos));
+    await firstValueFrom(
+      this.http.post(`${this.config.apiUrl}/movimientos/lote`, movimientos).pipe(timeout(LIMITE_PETICION_MS)),
+    );
   }
 }

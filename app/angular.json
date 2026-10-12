@@ -66,6 +66,18 @@
               "sourceMap": true,
               "namedChunks": true
             },
+            "servidor": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.servidor.ts"
+                }
+              ]
+            },
             "ci": {
               "progress": false
             }
@@ -80,6 +92,9 @@
             },
             "development": {
               "buildTarget": "app:build:development"
+            },
+            "servidor": {
+              "buildTarget": "app:build:servidor"
             },
             "ci": {
               "progress": false
