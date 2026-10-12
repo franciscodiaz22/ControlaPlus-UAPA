@@ -383,7 +383,36 @@ El usuario confirmó que Francisco (responsable original de U7) no estaba trabaj
 - evidencias definitivas para el informe (M9);
 - si se quisiera iOS/Safari, añadir una versión MP4 (H.264/AAC) del video.
 
-### M5 — U8 cámara / QR `[ ]`
+### M5 — U8 cámara / QR `[~]` (falta la lectura real con cámara en un dispositivo con Google Play)
+
+#### Resultado parcial de M5 (2026-10-12)
+
+**Implementación** (sin dependencias nuevas). Se completó la página QR existente de Ángel:
+- estados visibles del escáner;
+- mensajes en español para cancelación, permiso, falta de cámara o del módulo de Google y errores de lectura (`features/qr/qr-lectura.ts`);
+- "Escanear otro" y "Limpiar";
+- validación de los datos del QR con `validarMovimiento()` y un solo alta por lectura;
+- progreso de instalación del módulo de Google;
+- modo web explícito: "Escanear QR" no simula y el QR de ejemplo se marca "EJEMPLO, SIN CÁMARA";
+- etiqueta de la API según `origen`.
+
+El escáner se inyecta con `ESCANER_QR`. El escáner de Google abre su propia cámara mediante Play Services, así que la app no necesita el permiso `CAMERA`.
+
+**Archivos:**
+- Modificados: `features/qr/qr.page.ts`, `.html`, `.scss`.
+- Nuevos: `features/qr/qr-lectura.ts` (+ spec) y `features/qr/qr.page.spec.ts`.
+
+**Pruebas:**
+- **Unitarias:** 89/89 (20 nuevas).
+- **Build, lint y `git diff --check`:** OK.
+- **Chrome, modo web:** 9/9.
+- **Android** (emulador `Pixel_6`, Android 17 / API 37): 8/8 de lo que el emulador permite. Pasaron la pantalla, la navegación, el manejo del fallo del módulo con reintento sin mensajes acumulados, Limpiar, la navegación de vuelta y logcat sin errores. Además, ML Kit decodificó en el dispositivo QR de prueba generados fuera del repositorio.
+
+**Problema (entorno, no de la app):** la imagen del emulador es "Google APIs" sin la Play Store completa (`BIND_PLAY_MODULE_SERVICE not found`) y sin cuenta de Google. Por eso no puede instalar el módulo del escáner de Google y la cámara del escáner no se abre.
+
+**Pendiente:**
+- A4/A5/A7: lectura real con cámara, resultado y cancelación en un teléfono físico o en un emulador con Google Play y cuenta.
+- Decisión del usuario: añadir "Leer QR desde una foto" (`@capacitor/camera`, ya instalado, más el ML Kit incluido en la app). Se podría probar en este emulador y resolvería D3.
 
 - **Objetivo:** cerrar U8 según la decisión D3.
 - **Requisitos:** U8.

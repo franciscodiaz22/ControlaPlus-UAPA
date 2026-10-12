@@ -5,6 +5,8 @@ $azul: #4c7bff;
 $card: #121a22;
 $borde: #1e2a35;
 $muted: #7c8b99;
+$coral: #ff5a6e;
+$ambar: #ffc24b;
 $mono: 'Martian Mono', ui-monospace, Menlo, monospace;
 $display: 'Unbounded', 'Avenir Next', system-ui, sans-serif;
 
@@ -86,4 +88,61 @@ ion-spinner {
   margin-top: 20px;
   color: $muted;
   line-height: 1.6;
+
+  &.alerta {
+    color: $ambar;
+  }
+}
+
+/* Estado del escáner (U8) */
+.estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  color: $muted;
+  font-family: $mono;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &[data-estado='escaneando'],
+  &[data-estado='leido'] {
+    color: $cian;
+  }
+
+  &[data-estado='error'],
+  &[data-estado='cancelado'] {
+    color: $ambar;
+  }
+
+  ion-spinner {
+    margin: 0;
+  }
+}
+
+ion-button.secundario {
+  --background: transparent;
+  --color: #{$cian};
+  --border-color: #{$cian};
+  margin-top: 12px;
+}
+
+ion-button.limpiar {
+  --background: transparent;
+  --color: #{$muted};
+  min-height: 36px;
+  margin-top: 8px;
+}
+
+.prueba {
+  color: $ambar;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: $coral;
+  font-size: 13px;
+  line-height: 1.5;
 }

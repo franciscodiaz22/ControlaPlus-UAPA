@@ -9,32 +9,75 @@
     <p class="eyebrow">{{ modoWeb ? 'MODO DE PRUEBA WEB' : 'CÁMARA · ML KIT' }}</p>
     <h1>Leer código QR</h1>
     <p class="intro">
-      {{ modoWeb ? 'El navegador muestra un resultado QR de prueba. En la app Android se usa la cámara.' : 'Escanea un código para mostrar aquí el contenido que contiene.' }}
+      @if (modoWeb) {
+        En el navegador no se abre la cámara: el escáner real funciona en la app Android. Para recorrer el flujo
+        puedes usar un QR de ejemplo, que se marca como prueba.
+      } @else {
+        Escanea un código QR con la cámara para ver su contenido. Si es un movimiento de Controla+, puedes agregarlo
+        a Inicio.
+      }
+    </p>
+
+    <!-- Estado del escáner -->
+    <p class="estado" [attr.data-estado]="estado()" role="status" aria-live="polite">
+      @if (procesando()) {
+        <ion-spinner name="crescent"></ion-spinner>
+      }
+      {{ textoEstado }}
+      @if (progresoModulo() !== null) {
+        · {{ progresoModulo() }} %
+      }
     </p>
 
     <ion-button expand="block" (click)="escanear()" [disabled]="procesando()">
       <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-      <ion-spinner *ngIf="procesando()" name="crescent"></ion-spinner>
-      {{ procesando() ? 'Preparando escáner' : (modoWeb ? 'Probar lectura QR' : 'Escanear QR') }}
+      {{ resultado() ? 'Escanear otro' : 'Escanear QR' }}
     </ion-button>
 
-    <section class="resultado" *ngIf="resultado()" aria-live="polite">
-      <p class="eyebrow">CONTENIDO LEÍDO</p>
-      <pre>{{ resultado() }}</pre>
-    </section>
-
-    <ion-button *ngIf="enlaceQr()" expand="block" fill="outline" (click)="abrirEnlace()">
-      Abrir enlace
-    </ion-button>
-
-    <section class="resultado" *ngIf="consulta()" aria-live="polite">
-      <p class="eyebrow">RESPUESTA GET · {{ modoWeb ? 'API SIMULADA' : 'API' }}</p>
-      <pre>{{ consulta() }}</pre>
-      <ion-button *ngIf="consultaDatos()?.datos" expand="block" fill="outline" (click)="agregarMovimiento()">
-        Agregar movimiento
+    @if (modoWeb) {
+      <ion-button class="secundario" expand="block" fill="outline" (click)="probarEjemplo()" [disabled]="procesando()">
+        Probar con un QR de ejemplo
       </ion-button>
-    </section>
+    }
 
-    <p class="mensaje" *ngIf="mensaje()" role="status">{{ mensaje() }}</p>
+    @if (resultado()) {
+      <section class="resultado" aria-live="polite">
+        <p class="eyebrow">
+          CONTENIDO LEÍDO
+          @if (esEjemplo()) {
+            · <span class="prueba">EJEMPLO, SIN CÁMARA</span>
+          }
+        </p>
+        <pre>{{ resultado() }}</pre>
+      </section>
+    }
+
+    @if (enlaceQr()) {
+      <ion-button class="secundario" expand="block" fill="outline" (click)="abrirEnlace()">
+        Abrir enlace
+      </ion-button>
+    }
+
+    @if (consulta()) {
+      <section class="resultado" aria-live="polite">
+        <p class="eyebrow">RESPUESTA GET · {{ consultaDatos()?.origen === 'servidor' ? 'API' : 'API SIMULADA' }}</p>
+        <pre>{{ consulta() }}</pre>
+        @if (errorDatos()) {
+          <p class="error" role="alert">{{ errorDatos() }}</p>
+        } @else if (consultaDatos()?.datos) {
+          <ion-button class="secundario" expand="block" fill="outline" (click)="agregarMovimiento()" [disabled]="agregado()">
+            {{ agregado() ? 'Movimiento agregado' : 'Agregar movimiento' }}
+          </ion-button>
+        }
+      </section>
+    }
+
+    @if (mensaje()) {
+      <p class="mensaje" [class.alerta]="estado() === 'error'" role="status">{{ mensaje() }}</p>
+    }
+
+    @if (resultado() || estado() === 'cancelado' || estado() === 'error') {
+      <ion-button class="limpiar" fill="clear" size="small" (click)="limpiar()">Limpiar</ion-button>
+    }
   </main>
 </ion-content>
