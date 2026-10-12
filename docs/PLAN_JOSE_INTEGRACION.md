@@ -5,6 +5,7 @@
 > Responsable del plan: **José Daniel Marte** — Conectividad + Modo Offline + Integración técnica (líder técnico).
 > Origen: este documento empezó el 2026-09-30 como *Plan de integración de José Daniel* (Parte II, que se conserva íntegra). Desde el **2026-10-12** es el plan maestro para **terminar todo el proyecto**.
 > Autorización: los integrantes del equipo autorizaron a José Daniel a modificar, corregir, completar, integrar y pulir cualquier módulo. Para efectos académicos se mantiene la responsabilidad original de cada módulo (sección I.4).
+> **Excepción (2026-10-12): U6 — GPS + mapa interactivo + ubicación del usuario + marcadores** es responsabilidad del compañero que la está desarrollando (asignación original: Felix Alejandro Mejia Villa). José no la implementa; solo integra su trabajo cuando llegue (M7). Ver M1 en I.7.
 > Documento de control: se actualiza al terminar cada fase. **Cada fase requiere autorización explícita antes de ejecutarse y termina deteniéndose a esperar la siguiente autorización.**
 
 **Leyenda de estados:**
@@ -22,7 +23,7 @@ En la Parte II, escrita antes de la autorización del equipo, `[!]` significaba 
 
 - **Parte I — Plan maestro de finalización** (secciones I.1–I.12): estado actual, unidades U1–U10, contratos protegidos, fases M0–M12, decisiones y pendientes.
 - **Parte II — Historial del plan de integración** (secciones 1–10 originales): conectividad, modo offline, sincronización e integración (Fases 0–6 originales, del 2026-09-30 al 2026-10-01). Se conserva sin cambios de fondo; solo se añadieron notas de redirección y estados actualizados. **El registro de cambios único sigue en la sección 9.**
-- Para no confundir numeraciones, las fases nuevas usan el prefijo **M** (M0–M12) y sus tareas `M1.1`, `M1.2`…; las fases y tareas antiguas (`1.2`, `3.4`, `4.0`…) mantienen su número.
+- Para no confundir numeraciones, las fases nuevas usan el prefijo **M** (M0–M12) y sus tareas `M2.1`, `M2.2`…; las fases y tareas antiguas (`1.2`, `3.4`, `4.0`…) mantienen su número.
 
 ---
 
@@ -33,10 +34,11 @@ En la Parte II, escrita antes de la autorización del equipo, `[!]` significaba 
 - **Rama:** `feature/jose-integracion`, commit `4648919` *"Merge origin/main into feature/jose-integracion"* (2026-10-07), subida a GitHub y con el árbol limpio.
 - **`main`:** `a648578` (PR #3 de Kilsy). `main` contiene los PR #1 (Compartir Cerca, BLE), #2 (Ángel, módulo QR, `acae169`) y #3 (Kilsy, CRUD, `bdb6bb6`). `feature/jose-integracion` contiene todo `main` más el trabajo de José.
 - **Ramas de los compañeros** (auditoría del 2026-10-12): `feature/francisco-interfaz`, `feature/felix-gps` y `feature/angel-camera-api` no tienen commits propios (apuntan a `f827781`). `feature/kilsy-crud` ya está integrada. **No queda trabajo de ningún compañero fuera de esta rama.**
-- **Última validación registrada por José** (al cerrar el merge, 2026-10-07): **20/20 pruebas** del repositorio en verde (`npx ng test`), `ng build` correcto, `git diff --check` limpio y árbol limpio. M0 no cambia código; la línea base se vuelve a ejecutar al empezar M1 (tarea M1.1).
+- **Última validación registrada por José** (al cerrar el merge, 2026-10-07): **20/20 pruebas** del repositorio en verde (`npx ng test`), `ng build` correcto, `git diff --check` limpio y árbol limpio. M0 no cambia código. La línea base se volvió a validar el 2026-10-12 tras revertir la implementación temporal de M1 (20/20 pruebas, `ng build` OK) y se comprobará de nuevo al empezar M2.
 - **Lint:** el último valor medido son 21 errores preexistentes (Fase 4, 2026-10-01). Después del merge **no se ha vuelto a medir**: se revalida en M7.
 - **Pantallas actuales:** pestañas *Inicio*, *Compartir* (BLE) y *QR*; ruta `/compartir` directa y ruta `/nuevo` (formulario de Kilsy, sin enlace en la UI).
 - **Dependencias instaladas:** incluyen `@capacitor/geolocation` (se usa en Inicio) y `@capacitor/camera` (instalada, **sin uso**). No hay librería de mapas.
+- **M1 revertida (2026-10-12):** la implementación temporal de U6 hecha en M1 nunca llegó a commit y se revirtió por completo. La rama sigue en `dee57e4` con el árbol limpio y sin `GpsService`, Leaflet, pantalla Mapa ni permisos de ubicación en el manifest. Validación tras revertir: `npm ci`, 20/20 pruebas, `ng build` OK y `git diff --check` limpio. Detalle en M1 (I.7).
 
 ## I.2 Lo realizado desde el último registro (2026-10-01 → 2026-10-07)
 
@@ -65,11 +67,11 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 
 | Unidad | Tema | Responsable original | Estado real | Qué falta | Fase |
 |---|---|---|---|---|---|
-| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | `/nuevo` se carga de forma eager, queda fuera de las tabs y no tiene enlace; revisar las rutas finales cuando lleguen Mapa y Multimedia; indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
+| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | `/nuevo` se carga de forma eager, queda fuera de las tabs y no tiene enlace; revisar las rutas finales cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7); indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
 | U3 | Componentes, interacciones y gestos | Francisco | `[ ]` Hay componentes Ionic, pero **ningún gesto** | Gestos reales (`ion-item-sliding`, `ion-refresher`), interacción y evidencias | M3 |
 | U4 | Conectividad | José | `[x]` · Android pendiente | Solo las pruebas Android (I.10) | M8 |
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
-| U6 | GPS + mapa interactivo + marcadores | Félix | `[~]` Captura GPS parcial en `home.page.ts`; `Movimiento.ubicacion` existe | Servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual | M1 |
+| U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
 | U7 | Audio y video | Francisco | `[ ]` | Todo el módulo | M4 |
 | U8 | Cámara / QR | Ángel | `[~]` QR funcional con ML Kit (Android) y modo web simulado; `@capacitor/camera` sin uso | Decidir si hace falta foto (D3); pruebas; capturas reales | M5 |
 | U9 | Storage + CRUD | Kilsy | `[~]` CRUD funcional y persistente; **sincronización CRUD `[x]`** (versionado, tombstones, 18 pruebas) | Validaciones, formulario accesible, confirmación al eliminar, editar el tipo, componentes muertos, documento de requisitos | M2 |
@@ -77,13 +79,13 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 
 ## I.4 Responsabilidad académica original
 
-Se conserva para el informe y la defensa. La columna "Finalización" indica quién completa lo que falta tras la autorización del equipo.
+Se conserva para el informe y la defensa. La columna "Finalización" indica quién completa lo que falta tras la autorización del equipo. U6 queda excluida de esa autorización: la desarrolla su compañero responsable.
 
 | Integrante | Rama original | Responsabilidad original | Aporte registrado en git | Finalización |
 |---|---|---|---|---|
 | José Daniel Marte | `feature/jose-integracion` | Conectividad + Modo Offline + Integración técnica (líder técnico) | Fases 0–4 de la Parte II, integración BLE → sync, CRUD sincronizado, merge `4648919`, organización del equipo | José |
 | Francisco José Díaz Abreu | `feature/francisco-interfaz` | Interfaz + Multimedia (U3, U7) | AP4 de conectividad WiFi (`4d37c82`) y Wi-Fi Direct (`17a76e6`), fuera de `app/`. Sin commits en su rama | José (con autorización) |
-| Felix Alejandro Mejia Villa | `feature/felix-gps` | GPS + Mapa (U6) | Sin commits | José (con autorización) |
+| Felix Alejandro Mejia Villa | `feature/felix-gps` | GPS + Mapa (U6) | Sin commits en el repositorio a la fecha de la auditoría (2026-10-12) | **Compañero responsable de U6** (en desarrollo). José no implementa U6; integra el PR cuando llegue (M7) |
 | Ángel Diosiris Moscoso Viloria | `feature/angel-camera-api` | Cámara/QR + API REST + Pruebas (U8, U10) | `acae169` (PR #2 desde un fork) y `documentacion/Modulo_Camara_API_REST.md` | José completa la API real, las pruebas y la evidencia |
 | Kilsy Maria Vasquez Rosario | `feature/kilsy-crud` | CRUD + Almacenamiento + Requisitos (U9) | `bdb6bb6` (PR #3) | José completa el pulido; el documento de requisitos se coordina (M10) |
 
@@ -95,7 +97,7 @@ Lo ya validado no se rompe. Cualquier cambio en estos puntos se justifica en la 
 |---|---|---|
 | C1 | `NetworkService` (`core/network/`) | API pública estable: `isOnline$`, `estado$`, `isOnline`, `estado`, `init()` idempotente y tolerante a fallos (1.2), `refrescar()`, `setModoOfflinePrueba()`. Los módulos nuevos **leen** el estado; no crean otro detector de red. |
 | C2 | `OfflineStorageService` | Única fuente de movimientos (clave `controlaplus.movimientos`). **Toda escritura pasa por `escribir()`** (2.1). `movimientos$` excluye los eliminados y `pendientes$` incluye los tombstones. `marcarSincronizados(enviados)` confirma por versión. |
-| C3 | `MovimientosService` | Punto de entrada de altas (`registrar`), ediciones (`actualizar`) y eliminaciones (`eliminar`) desde la UI, el QR, el mapa y cualquier módulo nuevo. Lectura por `movimientos$`, `balance$` y `pendientes$`. *Excepción existente documentada:* el receptor BLE guarda con `storage.agregar()` y la sync lo detecta (3.5). |
+| C3 | `MovimientosService` | Punto de entrada de altas (`registrar`), ediciones (`actualizar`) y eliminaciones (`eliminar`) desde la UI, el QR, el mapa del compañero (U6) y cualquier módulo nuevo. Lectura por `movimientos$`, `balance$` y `pendientes$`. *Excepción existente documentada:* el receptor BLE guarda con `storage.agregar()` y la sync lo detecta (3.5). |
 | C4 | `SyncService` | Único que envía la cola. Se conservan la bandera anti-paralelo (3.1), la racha con espera creciente (3.3), `enVuelo`/`reservarEnvio`/`liberarEnvio` (3.4), el watcher de pendientes y la segunda vuelta (3.5). Un refresco manual (p. ej. pull-to-refresh) llama a `sincronizar('manual')`; no envía por su cuenta. |
 | C5 | Modelo `Movimiento` | `id` UUID (idempotencia), `estado`, `version`, `eliminado`, `ubicacion`. Los campos nuevos **solo opcionales**. Cualquier cambio revisa `ble-protocolo.ts`, `ApiService` y las pruebas CRUD. |
 | C6 | `ApiService` | Único punto de salida HTTP. Contrato de `/movimientos/lote` documentado en el código. El modo simulado siempre se identifica como simulación. |
@@ -114,7 +116,7 @@ Cada fase M sigue estos pasos, en este orden, y **no avanza sola a la siguiente*
 4. **Pruebas** automatizadas nuevas + regresión (C9) y prueba manual en navegador cuando aplique.
 5. **Build** (`ng build`).
 6. **Revisión** del diff (`git diff`, `git diff --check`, lint de los archivos tocados).
-7. **Commit** identificable, por ejemplo `M1: GPS, permisos y mapa con marcadores`.
+7. **Commit** identificable, por ejemplo `M2: pulido del CRUD (validaciones y confirmaciones)`.
 8. **Push** a `origin/feature/jose-integracion`.
 9. **Marcar la fase** en este plan (estado, resultado y fila del registro) y **detenerse a esperar autorización**.
 
@@ -122,7 +124,9 @@ Lo que solo puede probarse en un dispositivo queda `· Android pendiente` y se a
 
 ## I.7 Fases M0–M12
 
-Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12** (justificación en I.8).
+Orden de trabajo de José (actualizado el 2026-10-12): **M0 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12** (justificación en I.8).
+
+**M1 (U6) no forma parte del trabajo de José:** la desarrolla el compañero responsable y su trabajo entra en la rama a través de M7. Los números de fase no se renumeran, para conservar las referencias del historial.
 
 ### M0 — Estado base y plan maestro `[x]`
 
@@ -135,32 +139,31 @@ Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 �
 - **Evidencias:** el propio diff.
 - **Condición de completada:** el plan refleja el estado real sin dar por hechas tareas pendientes, y el usuario lo revisa. *Cumplida (2026-10-12): el usuario revisó el plan (con una revisión de calidad del Markdown) y autorizó el commit y el push de M0.*
 
-### M1 — U6 GPS + mapa interactivo + marcadores `[ ]`
+### M1 — U6 GPS + mapa interactivo + marcadores — **NO LA EJECUTA JOSÉ** (U6 corresponde al compañero)
 
-- **Objetivo:** GPS limpio y con permisos, y una pantalla de mapa con los movimientos que tienen ubicación.
-- **Requisitos:** U6 (GPS, mapa interactivo, marcadores). Parcialmente U1–U2 (nueva ruta y pestaña).
-- **Tareas:**
-  - M1.1 Auditoría acotada (GPS en `home.page.ts`, manifest, `ubicacion` en modelo/sync/BLE) y línea base (20 pruebas + build).
-  - M1.2 `GpsService` (`core/gps/`): `checkPermissions`/`requestPermissions`, `getCurrentPosition` con timeout, errores con mensajes claros, comportamiento web.
-  - M1.3 Permisos Android `ACCESS_COARSE_LOCATION` y `ACCESS_FINE_LOCATION`, y `uses-feature` de GPS con `required="false"`.
-  - M1.4 Inicio usa `GpsService` (deja de llamar directamente al plugin).
-  - M1.5 Librería de mapa (D2), **instalación solo con autorización**, y sus estilos.
-  - M1.6 `MapaPage` (`features/mapa/`):
-    - marcadores de los movimientos visibles con `ubicacion`, con popup de concepto, monto, tipo, fecha y estado (pendiente/sincronizado);
-    - botón "Mi ubicación" y encuadre automático;
-    - aviso sin conexión con `NetworkService.isOnline$`, porque los mapas base necesitan Internet;
-    - ruta lazy y pestaña "Mapa".
-  - M1.7 Pruebas de `GpsService` (plugin simulado) y del mapa (n movimientos → n marcadores; ignora los eliminados y los que no tienen ubicación).
-  - M1.8 Prueba manual en Chrome con geolocalización emulada.
-- **Archivos probables:** `core/gps/gps.service.ts` (+ spec), `features/mapa/*`, `features/inicio/home.page.ts`, `app.routes.ts`, `layout/tabs/*`, `android/app/src/main/AndroidManifest.xml`, `package.json`/`package-lock.json` (solo con autorización), `angular.json` o `global.scss`.
-- **Dependencias:** M0; decisión D2.
-- **Riesgos:**
-  - Con Leaflet: iconos por defecto rotos con el bundler, mapa gris dentro de las tabs (requiere `invalidateSize`), política de uso y atribución de los mapas base de OpenStreetMap.
-  - Permisos denegados.
-  - Romper C3/C5: el mapa solo **lee** y no cambia el modelo.
-- **Pruebas:** nuevas + regresión C9; Chrome con ubicación emulada. Android → I.10.
-- **Evidencias:** mapa con marcadores, popup abierto, "Mi ubicación", aviso sin conexión; en Android, el diálogo de permiso (M9).
-- **Condición de completada:** mapa funcional con marcadores reales en navegador, permisos declarados, pruebas y build en verde, commit y push. Android queda `[!]` en I.10.
+- **Estado:** fuera del trabajo de José. U6 (GPS, mapa interactivo, ubicación del usuario y marcadores) la está desarrollando el compañero responsable (asignación original: Félix). José no implementa ni se atribuye código de U6.
+- **Lo que le toca a José respecto a U6:** integrar el PR del compañero cuando llegue (M7.7), comprobar que respeta los contratos de I.5 e incluir sus casos en las pruebas Android (M8, A9–A10).
+- **Historial de M1 (2026-10-12)**, conservado para trazabilidad:
+  1. **Auditoría:** se revisó el estado de U6 en la rama. Solo existían la captura GPS parcial de Ángel en `home.page.ts` y el campo `Movimiento.ubicacion`; faltaban los permisos de ubicación en el manifest y no había mapa ni marcadores.
+  2. **Implementación temporal** (autorizada por el usuario, **sin commit**):
+     - `GpsService`;
+     - mapa con Leaflet 1.9.4 y OpenStreetMap, con marcadores, popup y "Mi ubicación";
+     - pestaña Mapa;
+     - permisos en el manifest;
+     - 22 pruebas nuevas.
+  3. **Validación de esa implementación temporal:** 42/42 pruebas, `ng build` sin avisos, lint limpio en los archivos tocados y 24/24 verificaciones en Chrome con ubicación simulada.
+  4. **Reversión:** el usuario confirmó que U6 es responsabilidad del compañero, que ya trabaja en ella. Se revirtió **todo** M1:
+     - código, manifest, `angular.json`, `package.json` y `package-lock.json`;
+     - `leaflet`, `@types/leaflet` y `@types/geojson`;
+     - no se guardó ningún parche.
+
+     Tras `npm ci`: 20/20 pruebas, build OK, `git diff --check` limpio y árbol limpio en `dee57e4`. **No queda en la rama ningún cambio de M1.**
+- **Observaciones de la auditoría que pueden servir al responsable de U6** (solo información; ninguna decisión suya queda tomada aquí):
+  - Hoy el manifest no declara `ACCESS_COARSE_LOCATION`/`ACCESS_FINE_LOCATION`, así que "Capturar GPS" de Inicio falla en Android.
+  - En web, `requestPermissions()` del plugin no está implementado.
+  - Los movimientos recibidos por BLE y los datos demo no traen ubicación.
+  - El concepto de un movimiento puede llegar de otro teléfono: no conviene mostrarlo en el mapa como HTML.
+  - Con Leaflet dentro de `ion-tabs`, un contenedor con `position: absolute` puede quedar con 0 px de alto, y hace falta `invalidateSize()` al volver a la pestaña.
 
 ### M2 — U9 pulido del CRUD `[ ]`
 
@@ -169,15 +172,16 @@ Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 �
 - **Tareas:**
   - M2.1 Decidir la pantalla única de alta/edición: el formulario de Kilsy convertido en página Ionic (cabecera, contenido, volver) o el diálogo actual. Es la base de los gestos de M3.
   - M2.2 Validaciones: concepto obligatorio, monto > 0, tipo; mensajes de error. Validación defensiva también en `registrar()`/`actualizar()` si no rompe las pruebas.
-  - M2.3 Edición del tipo (ingreso/gasto) y de la ubicación, usando `GpsService` (M1).
+  - M2.3 Edición del tipo (ingreso/gasto). La **ubicación** no se edita en M2: se conserva tal como está, porque su captura pertenece a U6 (compañero).
+  - M2.3a No se modifica la captura GPS existente de Inicio (`capturarGps()` y "Ubicación demo", integradas por Ángel). Si el alta pasa de la alerta a un formulario, se coordina con el responsable de U6 para no pisar su trabajo.
   - M2.4 Confirmación antes de eliminar.
   - M2.5 Enlazar `/nuevo` desde la UI (FAB) dentro de las tabs y como lazy, o eliminarla si no se usa.
   - M2.6 `MovimientosListaComponent` (plantilla vacía): completarlo y reutilizarlo en Inicio, o retirarlo junto con su spec.
   - M2.7 Coherencia visual con el tema Controla+.
   - M2.8 Revisar la copia de `modo_offline/` que tocó `bdb6bb6` (se decide en M7, D5).
 - **Archivos probables:** `features/movimientos/**`, `features/inicio/home.page.*`, `app.routes.ts`, `core/offline/movimientos.service.ts` (solo validación).
-- **Dependencias:** M1 (`GpsService`).
-- **Riesgos:** romper el versionado o los tombstones (C2), mandar campos de control desde la vista o duplicar altas.
+- **Dependencias:** M0. No depende de U6.
+- **Riesgos:** romper el versionado o los tombstones (C2), mandar campos de control desde la vista o duplicar altas, y conflictos en `home.page.*` con el PR de U6 (el compañero probablemente toque la captura GPS de Inicio).
 - **Pruebas:** validaciones del formulario, flujo crear/editar/eliminar con confirmación, `crud-sincronizacion.spec.ts` intacto.
 - **Evidencias:** formulario con errores de validación, edición, confirmación de borrado, pendiente offline → sincronizado.
 - **Condición de completada:** CRUD accesible desde la UI, sin código muerto, validado; regresión y build en verde; commit y push.
@@ -266,14 +270,24 @@ Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 �
   - M7.4 Limpieza de configuración: `analytics` personal en `angular.json`, `android.overridePathCheck=true` en `gradle.properties` (D6), `.vscode/launch.json` de la raíz, dependencias sin uso.
   - M7.5 `environment.prod.ts` coherente con D4.
   - M7.6 Revisar el arranque (`app.component.ts`) y los providers (`main.ts`).
-- **Dependencias:** M1–M6.
-- **Riesgos:** regresiones cruzadas en `home.page.*` (archivo tocado por 3 personas) y en `app.routes.ts`.
+  - M7.7 **Integrar U6 del compañero** cuando entregue su PR o rama. José no reescribe su módulo; revisa:
+    - contratos de I.5: el mapa solo lee `movimientos$`, y las altas con ubicación pasan por `MovimientosService.registrar()`;
+    - formato de `Movimiento.ubicacion`;
+    - rutas y pestañas;
+    - `AndroidManifest.xml`;
+    - dependencias nuevas;
+    - conflictos en `home.page.*`;
+    - después, regresión completa.
+
+    Si el PR no ha llegado al cerrar M7, U6 queda registrada como pendiente del compañero y no bloquea el resto.
+- **Dependencias:** M2–M6 (trabajo de José) y el PR de U6 del compañero (M7.7).
+- **Riesgos:** regresiones cruzadas en `home.page.*` (archivo tocado por 3 personas, y el compañero de U6 probablemente lo toque también) y en `app.routes.ts`.
 - **Condición de completada:** todo en verde, sin errores de lint en el código de la app (o con los restantes justificados), configuración limpia; commit y push.
 
 ### M8 — Pruebas Android `[!]`
 
 - **Objetivo:** validar en un dispositivo real todo lo marcado `· Android pendiente`.
-- **Requisitos:** todas las unidades con hardware: U4, U5, U6, U7, U8, U10. Antiguas 5.3 y 5.4.
+- **Requisitos:** todas las unidades con hardware: U4, U5, U7, U8, U10, y U6 si su PR ya está integrado (M7.7; sus casos A9–A10 los define y valida con su responsable). Antiguas 5.3 y 5.4.
 - **Tareas:** compilar (`npx @ionic/cli build` + `npx cap sync android`), instalar el APK y ejecutar el checklist de I.10 anotando el resultado real de cada caso (OK / falla / no probado).
 - **Dependencias:** M7; teléfono Android (y un segundo teléfono para BLE); servidor de M6 accesible desde el teléfono.
 - **Riesgos:** ruta de Windows con caracteres no ASCII (D6), versión de Java/Gradle (Ángel documentó usar JBR 21), driver del emulador.
@@ -289,7 +303,7 @@ Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 �
   - M9.4 Índice de evidencias por unidad.
 - **Regla:** no se inventan evidencias, no se reutilizan imágenes de otra funcionalidad y no se presentan capturas del prototipo web antiguo como si fueran de la app (antigua 6.2). Lo que falte queda marcado como faltante.
 - **Dependencias:** M8 para las de Android.
-- **Condición de completada:** cada unidad U1–U10 tiene al menos una evidencia real, o su ausencia está justificada.
+- **Condición de completada:** cada unidad U1–U10 tiene al menos una evidencia real, o su ausencia está justificada. Las evidencias de U6 las aporta su responsable.
 
 ### M10 — Documentación final `[ ]`
 
@@ -320,12 +334,13 @@ Orden propuesto: **M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 �
 ## I.8 Dependencias entre fases
 
 ```
-M0 ──► M1 (GPS/mapa) ──► M2 (CRUD) ──► M3 (navegación/gestos) ──┐
+M0 ──► M2 (CRUD) ──► M3 (navegación/gestos) ────────────────────┐
  │                                                              │
  ├──► M4 (multimedia, independiente) ───────────────────────────┤
  ├──► M5 (cámara/QR) ──► M6 (API REST) ─────────────────────────┤
+ ├── decisiones D1, D3–D6 ──────────────────────────────────────┤
  │                                                              ▼
- └── decisiones D1–D6 ──────────────────────────────────────► M7 (integración)
+ └ ─ ─ U6 del compañero (M1, fuera del trabajo de José) ─ ─ ─► M7 (integración; M7.7 integra U6)
                                                                 │
                                    M8 (Android) [!] ◄───────────┘
                                         │
@@ -333,7 +348,8 @@ M0 ──► M1 (GPS/mapa) ──► M2 (CRUD) ──► M3 (navegación/gestos)
                      M9 (evidencias) ──► M10 (documentación) ──► M11 (auditoría) ──► M12 (PR/entrega)
 ```
 
-- **M1 antes de M2:** M1 saca la lógica GPS de `home.page.ts` a `GpsService`, y el formulario de M2 ya lo usa.
+- **M2 primero:** ya no depende de ningún servicio GPS. Es la fase con más trabajo existente que pulir (U9) y sirve de base para M3.
+- **U6 (M1) va en paralelo, a cargo del compañero:** su trabajo entra por M7.7. Para reducir conflictos, M2 y M3 no tocan la captura GPS de Inicio.
 - **M2 antes de M3:** los gestos (deslizar para editar/eliminar, pull-to-refresh) actúan sobre la lista y el formulario del CRUD. Hacerlos antes obligaría a rehacer `home.page.*` dos veces.
 - **M5 antes de M6:** si la foto se asocia al movimiento, hay que decidir qué viaja en el POST antes de cerrar la API (C8).
 - **M4** no depende de nadie y puede adelantarse sin riesgo.
@@ -344,12 +360,13 @@ M0 ──► M1 (GPS/mapa) ──► M2 (CRUD) ──► M3 (navegación/gestos)
 | # | Decisión | Opciones | Recomendación | Necesaria antes de | Estado |
 |---|---|---|---|---|---|
 | D1 | Consigna oficial del proyecto final | El usuario aporta el documento o la rúbrica (Canvas) / se usa la lista U1–U10 acordada | Aportar la consigna. En la carpeta del curso solo están "Trabajo final" y "Faces del proyecto", que son material de **otro estudiante** (app "MiBolsillo", 2025), y en Descargas la rúbrica es de **otra asignatura** (IA ISW309) | M3 (gestos), M5 (U8), M6 (U10), M11 | `[!]` |
-| D2 | Librería de mapa | Leaflet + OpenStreetMap (sin clave de API) / `@capacitor/google-maps` (clave y facturación de Google) | Leaflet + OSM, con atribución | M1.5 | `[ ]` |
+| D2 | Librería de mapa | Leaflet + OpenStreetMap (sin clave de API) / `@capacitor/google-maps` (clave y facturación de Google) | Se aprobó Leaflet + OSM **solo para la implementación temporal de M1, ya revertida**. **Ya no es una decisión de José:** la librería la elige el responsable de U6 | — | Fuera de alcance (U6 del compañero) |
 | D3 | Alcance de U8 | Solo QR / QR + foto con `@capacitor/camera` | Según D1; si no se aclara, añadir la foto de recibo guardada solo en el teléfono (cubre "cámara" sin ambigüedad) | M5 | `[ ]` |
 | D4 | Backend de U10 | A: servidor propio en Node puro (`server/`, sin dependencias) / B: API pública de pruebas (JSONPlaceholder; su POST **no persiste**) / A + B | A (real y defendible), con el modo simulado solo para demos sin red | M6 | `[ ]` |
 | D5 | Carpetas duplicadas de la raíz | Conservar como históricas con una nota en su README / mover a `historico/` / eliminar | Conservar con una nota (sin borrar) | M7 | `[ ]` (antigua 4.7) |
 | D6 | `android.overridePathCheck=true` | Mantener / quitar y compilar desde una ruta ASCII | Quitar si la compilación en una ruta ASCII funciona | M7/M8 | `[ ]` |
-| D7 | Numeración de las fases M0–M12 y orden M1→M2→M3 | — | Adoptada en M0 | — | `[x]` |
+| D7 | Numeración de las fases M0–M12 y orden M1→M2→M3 | — | Adoptada en M0. **Actualizada el 2026-10-12:** se mantiene la numeración, M1 sale del trabajo de José y el orden pasa a M0→M2→M3→…→M12 | — | `[x]` |
+| D8 | Responsabilidad de U6 | José (con autorización) / compañero responsable | El usuario confirmó que U6 la desarrolla el compañero; José solo integra (M7.7) | — | `[x]` (2026-10-12) |
 
 ## I.10 Pendientes de pruebas Android (lista consolidada)
 
@@ -365,8 +382,8 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 | A6 | BLE entre dos teléfonos: aceptar con red, sin red (→ pendiente → sync) y durante una sync | 3.5 | `[!]` |
 | A7 | CRUD offline en el dispositivo: editar y eliminar sin red, reconectar, sin duplicados | 4.2 | `[!]` |
 | A8 | QR real con ML Kit: QR de datos (GET) y QR con URL (Abrir enlace) | Ángel | `[!]` (la doc de Ángel registra lectura y compilación; falta la captura del enlace) |
-| A9 | GPS: diálogo de permiso, permiso denegado, captura real | M1 | `[!]` |
-| A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | M1 | `[!]` |
+| A9 | GPS: diálogo de permiso, permiso denegado, captura real | U6 (compañero) | `[!]` Las define y valida el responsable de U6; José las incluye en M8 si U6 está integrada |
+| A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | U6 (compañero) | `[!]` Ídem A9 |
 | A11 | Gestos táctiles reales (deslizar, pull-to-refresh) | M3 | `[!]` |
 | A12 | Audio y video locales en el WebView de Android | M4 | `[!]` |
 | A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[!]` |
@@ -376,24 +393,27 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 
 | # | Entregable | Contenido | Fase | Estado |
 |---|---|---|---|---|
-| DOC-1 | Documento técnico general | Arquitectura (core/features/layout), contratos de I.5, flujos (offline-first, sync, CRUD con versionado/tombstones, BLE, GPS/mapa, QR/API, multimedia), cómo compilar y probar | M10 | `[ ]` |
+| DOC-1 | Documento técnico general | Arquitectura (core/features/layout), contratos de I.5, flujos (offline-first, sync, CRUD con versionado/tombstones, BLE, QR/API, multimedia y la integración de GPS/mapa tal como la entregue su responsable), cómo compilar y probar | M10 | `[ ]` |
 | DOC-2 | Documento del módulo de conectividad/offline | Antigua 6.1: servicios, cola de escrituras, disparadores de sync, reintentos, pruebas | M10 | `[ ]` |
-| DOC-3 | Documentos por módulo | GPS/mapa, multimedia, CRUD y requisitos (coordinado con Kilsy), interfaz/gestos; actualizar `Modulo_Camara_API_REST.md` (Ángel) con la API real | M10 | `[ ]` |
+| DOC-3 | Documentos por módulo | Multimedia, CRUD y requisitos (coordinado con Kilsy), interfaz/gestos. El documento de GPS/mapa (U6) lo redacta su responsable; José solo lo enlaza; actualizar `Modulo_Camara_API_REST.md` (Ángel) con la API real | M10 | `[ ]` |
 | DOC-4 | Diagramas | Actualizar `documentacion/diagramas/*.mmd` (antigua 6.3): arranque, pendientes nuevos, CRUD sincronizado, arquitectura con los módulos nuevos | M10 | `[ ]` |
 | DOC-5 | README raíz | Hoy dice "Autor: Francisco Díaz" y describe solo la AP4. Pasará a: descripción de Controla+, equipo y responsabilidades (I.4), módulos U1–U10, instalación, ejecución web/Android, servidor de pruebas, pruebas automatizadas, estructura de carpetas | M10 | `[ ]` |
 | DOC-6 | Evidencias | `docs/evidencias/` con índice por unidad (M9); solo evidencias reales | M9 | `[!]` |
-| DOC-7 | Referencias APA 7 | Documentación oficial usada (Ionic, Angular, Capacitor y cada plugin, ML Kit, librería de mapa y OpenStreetMap, Ionic Storage, Vitest) y licencias de los archivos multimedia. Cada referencia se verifica al citarla (autor, año, título, URL) | M10 | `[ ]` |
+| DOC-7 | Referencias APA 7 | Documentación oficial usada (Ionic, Angular, Capacitor y cada plugin, ML Kit, Ionic Storage, Vitest; las referencias de GPS/mapa las aporta el responsable de U6) y licencias de los archivos multimedia. Cada referencia se verifica al citarla (autor, año, título, URL) | M10 | `[ ]` |
 | DOC-8 | Anexos | Este plan, el checklist de pruebas Android con resultados (M8), el contrato de la API (`/movimientos/lote`, `/qr/consultar`), el listado de pruebas automatizadas y el registro de cambios | M10 | `[ ]` |
-| DOC-9 | Defensa individual | Guion por integrante con su módulo original (I.4), qué hace, cómo se probó y su evidencia. Para José: arquitectura offline-first, cola de escrituras, sync con reintentos, anti-duplicados, CRUD con versionado/tombstones, integración BLE, e integración y finalización del proyecto. Incluir posibles preguntas y la demo en vivo (orden de pantallas) | M10 | `[ ]` |
+| DOC-9 | Defensa individual | Guion por integrante con su módulo original (I.4), qué hace, cómo se probó y su evidencia. Para José: arquitectura offline-first, cola de escrituras, sync con reintentos, anti-duplicados, CRUD con versionado/tombstones, integración BLE, e integración y finalización del proyecto (sin U6, que defiende su responsable). Incluir posibles preguntas y la demo en vivo (orden de pantallas) | M10 | `[ ]` |
 | DOC-10 | `equipo/*.md` | Actualizar el estado final de cada integrante sin borrar su responsabilidad original | M10 | `[ ]` |
 
 ## I.12 Próximo paso
 
-**Estado:** M0 `[x]` (2026-10-12): plan revisado por el usuario y cerrado con su commit y push autorizados en `feature/jose-integracion`. M1–M12 siguen sin empezar.
+**Estado:**
+- M0 `[x]` (2026-10-12): plan revisado por el usuario y cerrado con su commit y push autorizados en `feature/jose-integracion`.
+- M1: auditada, implementada temporalmente, validada y **revertida por completo** el mismo día, porque U6 corresponde al compañero. No es trabajo de José (ver M1 en I.7).
+- M2–M12: sin empezar.
 
-**Siguiente fase propuesta:** **M1 — U6 GPS + mapa**. Antes de M1.5 hace falta decidir D2 (librería de mapa) y autorizar la instalación de paquetes.
+**Siguiente fase propuesta:** **M2 — U9 pulido del CRUD**. No depende de U6.
 
-**Esperando autorización del usuario.** No se inicia M1 automáticamente.
+**Esperando autorización del usuario.** No se inicia M2 automáticamente.
 
 ---
 
@@ -994,7 +1014,7 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 | 4.1 | Integración con la API REST | Pasar del servidor simulado al real | `core/offline/api.service.ts`, `environments/*` | Acordar con Ángel endpoint, formato e idempotencia por `id`. `ApiService` pasa a delegar en su cliente o se mantiene como único punto de salida | Con `usarServidorSimulado: false` la sync llega al backend | [!] Ángel → **[ ] trasladada a M6** (decisión D4) |
 | 4.2 | Integración con CRUD | CRUD y offline sobre el mismo almacenamiento | según el acuerdo 2.4 | Revisar el PR de Kilsy y adaptar solo lo necesario en `core/offline` | Crear/editar/eliminar offline y sincronizar | **[x]** (navegador y pruebas del repo) · Android pendiente (I.10, A7). Realizada en `4648919` (2026-10-07); ver «Resultado de la tarea 4.2» en I.2 |
 | 4.3 | Integración con la interfaz | Consistencia visual del indicador, el contador y los toasts | `core/network/network-status.component.scss`, `theme/conectividad.scss`, `features/inicio/home.page.scss` | Si Francisco define tokens globales, cambiar los colores fijos por esos tokens | Revisión visual con Francisco | [!] Francisco → **[ ] trasladada a M3 (M3.5)** |
-| 4.4 | Integración con GPS/Mapa | Comportamiento del mapa sin red | módulo de Félix (no se toca) | Ofrecer `NetworkService.isOnline$` para que el mapa muestre un aviso offline. Si los movimientos guardan ubicación, acordar el cambio de `movimiento.model.ts` | El mapa sin red no rompe la app | [!] Félix → **[ ] trasladada a M1 (M1.6)**. El campo `ubicacion` ya existe en `movimiento.model.ts` (`acae169`) |
+| 4.4 | Integración con GPS/Mapa | Comportamiento del mapa sin red | módulo de Félix (no se toca) | Ofrecer `NetworkService.isOnline$` para que el mapa muestre un aviso offline. Si los movimientos guardan ubicación, acordar el cambio de `movimiento.model.ts` | El mapa sin red no rompe la app | [!] Félix → en M0 se trasladó a la fase M1 del plan maestro. El campo `ubicacion` ya existe en `movimiento.model.ts` (`acae169`). *Actualización 2026-10-12: U6 la desarrolla el compañero responsable; José solo integra su PR (M7.7)* |
 | 4.5 | Rutas y arranque al integrar módulos | Mantener `app.routes.ts`, `app.component.ts` y `main.ts` coherentes | archivos compartidos | Revisar los PR del equipo; añadir rutas/providers solo cuando llegue cada módulo | `ng build` OK tras cada merge | [ ] Continua: se activa cuando lleguen los PR del equipo (hoy no hay módulos nuevos que integrar). *Nota 2026-10-12: PR #2 y #3 integrados en `4648919`; se aplica en cada fase M y se cierra en M7 (M7.6)* |
 | 4.6 | Build y lint limpios | Base estable | — | `npx ng build`, `npx ng lint` | Sin errores. **Estado actual (revalidado en la Fase 4):** build OK; lint con **21 errores previos** (no introducidos por este plan): 19 `prefer-control-flow` en plantillas (`network-status.component.html` 3, `home.page.html` 2, `compartir.page.html` 14 → este último no es mío) y 2 `prefer-inject` (`network.service.ts`, `offline-storage.service.ts`). Corregir solo los de mis archivos, con autorización | [ ] → **trasladada a M7 (M7.2)**; el lint no se ha vuelto a medir tras `4648919` |
 | 4.7 | Política de carpetas duplicadas de la raíz | Evitar divergencia entre `detector_red/`, `modo_offline/` y `app/` | — | Solo decidir con el usuario (no borrar). Opción: marcarlas como históricas en su README. Nota: tras 1.2, 2.1, 2.2 y la Fase 3 ya **no** son idénticas a `app/` | Decisión registrada | [ ] → **trasladada a M7 (M7.3, decisión D5)** |
@@ -1054,7 +1074,7 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 
 **Estado de la Fase 4:** la **validación de integración de mi módulo (4.0) está completa en navegador**. La fase **no se marca como completada** porque 4.1–4.4 dependen de Ángel, Kilsy, Francisco y Félix, 4.5 se activa con los PR del equipo, y 4.6 (corregir los errores de lint de mis archivos) y 4.7 (política de carpetas duplicadas) esperan tu decisión.
 
-> **Nota 2026-10-12:** 4.2 completada en `4648919`. 4.1 → M6, 4.3 → M3, 4.4 → M1, 4.5/4.6/4.7 → M7. La Fase 4 original se considera absorbida por el plan maestro.
+> **Nota 2026-10-12:** 4.2 completada en `4648919`. 4.1 → M6, 4.3 → M3, 4.4 → M1, 4.5/4.6/4.7 → M7. La Fase 4 original se considera absorbida por el plan maestro. *(Actualización 2026-10-12: 4.4 pertenece a U6, que desarrolla el compañero responsable; su integración va en M7.7.)*
 
 ### FASE 5 — Pruebas y validación
 
@@ -1079,7 +1099,7 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 
 ## 4. Dependencias con otros integrantes
 
-> **Nota 2026-10-12 (histórica):** esta sección se escribió cuando cada módulo esperaba a su responsable. Con la autorización del equipo, José completa los módulos pendientes. Las reglas técnicas de abajo siguen vigentes y se formalizan como contratos en **I.5**. La responsabilidad académica original está en **I.4**. Estado de cada punto: el CRUD de Kilsy ya reutiliza `OfflineStorageService` con `escribir()` y sincroniza ediciones y borrados (I.2); la API real de Ángel → M6; la interfaz/multimedia de Francisco → M3/M4; GPS/mapa de Félix → M1 (el campo `ubicacion` ya existe).
+> **Nota 2026-10-12 (histórica):** esta sección se escribió cuando cada módulo esperaba a su responsable. Con la autorización del equipo, José completa los módulos pendientes. Las reglas técnicas de abajo siguen vigentes y se formalizan como contratos en **I.5**. La responsabilidad académica original está en **I.4**. Estado de cada punto: el CRUD de Kilsy ya reutiliza `OfflineStorageService` con `escribir()` y sincroniza ediciones y borrados (I.2); la API real de Ángel → M6; la interfaz/multimedia de Francisco → M3/M4; GPS/mapa de Félix → M1 (el campo `ubicacion` ya existe). *Actualización 2026-10-12: U6 (GPS/mapa) queda fuera de esa autorización; la desarrolla el compañero responsable y José solo la integra (M7.7). Las reglas de la subsección de Félix siguen siendo válidas como recomendaciones de integración.*
 
 ### Dependencias de Kilsy (CRUD + Almacenamiento + Requisitos)
 - El almacenamiento de movimientos vive en `core/offline/` (mío). El CRUD debe **reutilizar** `OfflineStorageService` en lugar de crear un segundo almacén, para que la cola de pendientes siga siendo única.
@@ -1203,6 +1223,10 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-10-06 | (equipo) | Commit de Kilsy `bdb6bb6` (integrado en `main` el 2026-10-07 por el PR #3, `a648578`): `eliminar`/`actualizar` locales, Editar/Eliminar en Inicio, `MovimientosFormComponent` (`/nuevo`) y `MovimientosListaComponent`. Registrado a posteriori (2026-10-12) | `core/offline/*`, `features/inicio/*`, `features/movimientos/**`, `app.routes.ts` |
 | 2026-10-07 | 4 (4.2) | Merge de `origin/main` en `feature/jose-integracion` (`4648919`) con integración y **sincronización del CRUD**: `version`, tombstones `eliminado`, `actualizar`/`eliminar` por `escribir()`, `marcarSincronizados` por versión, `pendientes$` con eliminaciones, contrato de `/movimientos/lote`, corrección del monto duplicado, `crud-sincronizacion.spec.ts` (18) + providers en los specs de Kilsy. Validación registrada: 20/20 pruebas, build OK, `git diff --check` limpio. Registrado a posteriori (2026-10-12) | `core/offline/*`, `core/network/network.service.ts`, `app.component.ts`, `features/inicio/*`, `features/movimientos/**/*.spec.ts` |
 | 2026-10-12 | M0 | El documento se convierte en el **Plan Maestro de Finalización** (Parte I: estado actual, I.2 historial no registrado, U1–U10, responsabilidades, contratos C1–C10, ciclo por fase, fases M0–M12, dependencias, decisiones D1–D7, pendientes Android A1–A14, documentación y defensa). Parte II conservada con notas de redirección. Revisión de calidad del Markdown (IDs de entregables `DOC-1…DOC-10`, fecha del commit de Kilsy). M0 cerrada con commit y push autorizados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-12 | M1 (auditoría) | Auditoría de U6 sin cambios: captura GPS parcial de Ángel en Inicio, `Movimiento.ubicacion` existente, faltan permisos de ubicación en el manifest, sin mapa ni marcadores. El usuario aprobó Leaflet + OSM (D2) | — |
+| 2026-10-12 | M1 (implementación temporal) | Implementación autorizada **sin commit**: `GpsService`, mapa Leaflet 1.9.4 + OSM con marcadores, popup y "Mi ubicación", pestaña Mapa, permisos en el manifest, 22 pruebas nuevas. Validada: 42/42 pruebas, build sin avisos, lint limpio y 24/24 verificaciones en Chrome | (ninguno llegó a commit) |
+| 2026-10-12 | M1 (reversión) | El usuario confirmó que U6 es responsabilidad del compañero, que ya la está desarrollando. Se revirtió todo M1 (código, manifest, `angular.json`, dependencias `leaflet`, `@types/leaflet` y `@types/geojson`) sin guardar parche; `npm ci`; 20/20 pruebas, build OK, `git diff --check` limpio, árbol limpio en `dee57e4` | — (la rama queda como en `dee57e4`) |
+| 2026-10-12 | Plan | Nueva distribución de responsabilidades: U6 devuelta al compañero (I.3, I.4, cabecera); M1 fuera del trabajo de José, con su historial; M2 sin dependencia de GPS; nuevo orden M0→M2→…→M12; M7.7 integración de U6; D2 fuera de alcance; nueva D8; A9–A10, DOC-3 y DOC-9 ajustados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 
