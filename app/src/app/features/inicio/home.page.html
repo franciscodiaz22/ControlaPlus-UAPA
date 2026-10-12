@@ -44,7 +44,12 @@
     }
   </section>
 
-  <h2 class="seccion">Movimientos recientes</h2>
+  <div class="seccion-cabecera">
+    <h2 class="seccion">Movimientos recientes</h2>
+    <ion-button fill="clear" size="small" routerLink="/tabs/inicio/movimiento/nuevo" aria-label="Nuevo movimiento con formulario">
+      Formulario
+    </ion-button>
+  </div>
 
   <ion-list lines="none">
     <ion-item
@@ -66,21 +71,21 @@
         {{ m.tipo === 'ingreso' ? '+' : '-' }} {{ m.monto | currency:'DOP':'RD$ ':'1.2-2' }}
       </ion-note>
 
-<ion-button
-  slot="end"
-  fill="clear"
-  aria-label="Editar movimiento"
-  (click)="editarMovimiento(m)"
->
-  Editar
-</ion-button>
+      <ion-button
+        slot="end"
+        fill="clear"
+        aria-label="Editar movimiento"
+        [routerLink]="['/tabs/inicio/movimiento', m.id]"
+      >
+        Editar
+      </ion-button>
 
       <ion-button
         slot="end"
         fill="clear"
         color="danger"
         aria-label="Eliminar movimiento"
-        (click)="eliminarMovimiento(m.id)"
+        (click)="eliminarMovimiento(m)"
       >
         Eliminar
       </ion-button>

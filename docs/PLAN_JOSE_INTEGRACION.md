@@ -67,14 +67,14 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 
 | Unidad | Tema | Responsable original | Estado real | Qué falta | Fase |
 |---|---|---|---|---|---|
-| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | `/nuevo` se carga de forma eager, queda fuera de las tabs y no tiene enlace; revisar las rutas finales cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7); indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
+| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); revisar las rutas finales cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7); indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
 | U3 | Componentes, interacciones y gestos | Francisco | `[ ]` Hay componentes Ionic, pero **ningún gesto** | Gestos reales (`ion-item-sliding`, `ion-refresher`), interacción y evidencias | M3 |
 | U4 | Conectividad | José | `[x]` · Android pendiente | Solo las pruebas Android (I.10) | M8 |
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
 | U7 | Audio y video | Francisco | `[ ]` | Todo el módulo | M4 |
 | U8 | Cámara / QR | Ángel | `[~]` QR funcional con ML Kit (Android) y modo web simulado; `@capacitor/camera` sin uso | Decidir si hace falta foto (D3); pruebas; capturas reales | M5 |
-| U9 | Storage + CRUD | Kilsy | `[~]` CRUD funcional y persistente; **sincronización CRUD `[x]`** (versionado, tombstones, 18 pruebas) | Validaciones, formulario accesible, confirmación al eliminar, editar el tipo, componentes muertos, documento de requisitos | M2 |
+| U9 | Storage + CRUD | Kilsy | `[x]` · Android pendiente. CRUD funcional y persistente, sincronización CRUD (versionado, tombstones) y, desde M2, validación compartida, formulario de alta/edición, edición del tipo y confirmación al eliminar | Pruebas Android (A7) y documento de requisitos (M10) | M2 `[x]`, M8, M10 |
 | U10 | REST API GET + POST | Ángel | `[~]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) en código, **solo simulados** (`usarServidorSimulado: true`, dominio `.example`) | Servidor real verificable (D4), tests de `ApiService`, evidencias | M6 |
 
 ## I.4 Responsabilidad académica original
@@ -103,7 +103,7 @@ Lo ya validado no se rompe. Cualquier cambio en estos puntos se justifica en la 
 | C6 | `ApiService` | Único punto de salida HTTP. Contrato de `/movimientos/lote` documentado en el código. El modo simulado siempre se identifica como simulación. |
 | C7 | Bluetooth (`core/compartir/**`, `features/compartir/**`) | No se modifica salvo un defecto demostrado. Flujo protegido: aceptar → guardado `pendiente` → sincronización. |
 | C8 | Datos pesados | Fotos, audio o video **no entran** en la cola de sincronización ni en el `POST` sin una decisión explícita (D3). |
-| C9 | Regresión obligatoria | En cada fase: las 20 pruebas actuales + las nuevas en verde, `ng build` OK y `git diff --check` limpio. Sin errores de lint **nuevos** en los archivos tocados. |
+| C9 | Regresión obligatoria | En cada fase: todas las pruebas del repositorio (20 al empezar el plan maestro; 37 tras M2) más las nuevas en verde, `ng build` OK y `git diff --check` limpio. Sin errores de lint **nuevos** en los archivos tocados. |
 | C10 | Archivos compartidos | `app.routes.ts`, `app.component.ts`, `main.ts`, `environments/*`, `package.json`, `angular.json`, `AndroidManifest.xml`: se tocan solo en la fase que lo necesita y quedan listados en su resultado. Los paquetes se instalan solo con autorización explícita. |
 
 ## I.6 Ciclo obligatorio por fase
@@ -165,7 +165,7 @@ Orden de trabajo de José (actualizado el 2026-10-12): **M0 → M2 → M3 → M4
   - El concepto de un movimiento puede llegar de otro teléfono: no conviene mostrarlo en el mapa como HTML.
   - Con Leaflet dentro de `ion-tabs`, un contenedor con `position: absolute` puede quedar con 0 px de alto, y hace falta `invalidateSize()` al volver a la pestaña.
 
-### M2 — U9 pulido del CRUD `[ ]`
+### M2 — U9 pulido del CRUD `[x]` · Android pendiente (A7)
 
 - **Objetivo:** un CRUD completo, validado y coherente sin tocar la sincronización.
 - **Requisitos:** U9 (crear, leer, actualizar, eliminar, persistencia). Parcialmente U1–U2 (`/nuevo`).
@@ -186,6 +186,54 @@ Orden de trabajo de José (actualizado el 2026-10-12): **M0 → M2 → M3 → M4
 - **Evidencias:** formulario con errores de validación, edición, confirmación de borrado, pendiente offline → sincronizado.
 - **Condición de completada:** CRUD accesible desde la UI, sin código muerto, validado; regresión y build en verde; commit y push.
 
+#### Resultado de M2 (2026-10-12)
+
+**Decisiones del usuario:**
+- **D-M2a = A:** el formulario de Kilsy pasa a ser la página de alta y edición validada. La captura GPS y la "Ubicación demo" de Inicio siguen igual.
+- **D-M2b:** se retira `MovimientosListaComponent` y su spec.
+
+Las tareas originales M2.1–M2.8 se ejecutaron agrupadas en cinco tareas:
+
+| # | Tarea ejecutada | Resultado | Estado |
+|---|---|---|---|
+| M2.1 | Validación compartida | `features/movimientos/validacion.ts`: `validarMovimiento()` es una función pura. Exige concepto obligatorio (sin espacios sobrantes) de hasta 80 caracteres, el mismo `CONCEPTO_MAX` que acepta Compartir Cerca; monto finito y mayor que 0, con sus decimales; y tipo `ingreso` o `gasto`. Cada error tiene su mensaje. Sin cambios en `MovimientosService`, `OfflineStorageService` ni `SyncService` | `[x]` |
+| M2.2 | Inicio | El alta rápida (alerta del +) valida y avisa sin cerrar la alerta. Eliminar pide confirmación y muestra el concepto como `subHeader`, en texto. "Editar" y el nuevo botón "Formulario" abren el formulario; se retiró la alerta de edición. `capturarGps()` y "Ubicación demo" no se tocaron | `[x]` |
+| M2.3 | Formulario | Página Ionic en `/tabs/inicio/movimiento/nuevo` (alta) y `/tabs/inicio/movimiento/:id` (edición), lazy dentro de la pestaña Inicio; `/nuevo` redirige al alta. Errores por campo, selección de tipo y edición a partir del movimiento guardado (conserva ubicación, fecha y estado). Usa `registrar()` y `actualizar()`, vuelve a Inicio, tiene el estilo de Controla+ y usa `inject()` | `[x]` |
+| M2.4 | Limpieza | Retirados `MovimientosListaComponent` y su spec, y el import directo del formulario en `app.routes.ts`; no queda código muerto relacionado. La copia de `modo_offline/` sigue para M7 (D5) | `[x]` |
+| M2.5 | Verificación | Resultados en la lista siguiente | `[x]` |
+
+**Verificación:**
+- **Pruebas:** **37/37**.
+  - Las 18 de `crud-sincronizacion.spec.ts`, intactas.
+  - 7 de validación.
+  - 7 del formulario: errores visibles, alta, edición del tipo conservando la ubicación, movimiento inexistente.
+  - 5 de Inicio: alta inválida y válida, y eliminar con cancelar y con confirmar.
+  - Se retiraron las 2 pruebas de creación de los componentes de Kilsy, reemplazadas por las del formulario.
+- **Build:** `ng build` OK, sin avisos.
+- **Lint:** sin errores nuevos en los archivos tocados. Quedan los 3 `prefer-control-flow` que ya estaban en `home.page.html` (M7.2); se resolvieron los 2 `prefer-inject` de los componentes de Kilsy.
+- **`git diff --check`:** limpio.
+- **Prueba manual en Chrome:** **17/17** comprobaciones:
+  - alta válida, por la alerta y por el formulario;
+  - alta inválida, por la alerta y por el formulario;
+  - edición del tipo;
+  - edición conservando la ubicación demo;
+  - eliminar con cancelar y con confirmar;
+  - sin red → pendiente → red → sincronizado;
+  - persistencia al recargar;
+  - sin errores de consola.
+
+**Archivos:**
+- `app.routes.ts`
+- `features/inicio/home.page.*`
+- `features/inicio/home.page.spec.ts` (nuevo)
+- `features/movimientos/validacion.ts` y su spec (nuevos)
+- `features/movimientos/movimientos-form/*`
+- `features/movimientos/movimientos-lista/*` (eliminado)
+
+Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
+
+**Pendiente para M3:** las filas de la lista de Inicio quedan apretadas en móvil (monto, Editar y Eliminar en la misma fila). Ya estaba así antes de M2 (ver M3.7). **Pendiente para Android:** A7 (I.10).
+
 ### M3 — U1–U3 navegación, interacción y gestos `[ ]`
 
 - **Objetivo:** navegación final coherente y gestos reales.
@@ -197,6 +245,7 @@ Orden de trabajo de José (actualizado el 2026-10-12): **M0 → M2 → M3 → M4
   - M3.4 Indicador ONLINE/OFFLINE visible fuera de Inicio (antigua 1.4).
   - M3.5 Revisión de la integración visual de los toasts y el contador (antigua 4.3).
   - M3.6 Opcional: otro gesto con `GestureController` si la consigna pide gestos personalizados (D1).
+  - M3.7 (detectado en M2) Filas de la lista de Inicio apretadas en móvil: monto, "Editar" y "Eliminar" comparten fila y el concepto queda estrecho a 412 px. Se resuelve al mover Editar/Eliminar a `ion-item-sliding` (M3.2).
 - **Archivos probables:** `features/inicio/home.page.*`, `layout/tabs/*`, `app.routes.ts`, `theme/*.scss`, `core/network/network-status.component.*` (solo uso).
 - **Dependencias:** M2.
 - **Riesgos:** gestos que roban toques. Ya ocurrió con un `ion-router-outlet` extra que bloqueaba botones (documentado por Ángel). También, el refresco no debe provocar envíos dobles.
@@ -409,11 +458,12 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 **Estado:**
 - M0 `[x]` (2026-10-12): plan revisado por el usuario y cerrado con su commit y push autorizados en `feature/jose-integracion`.
 - M1: auditada, implementada temporalmente, validada y **revertida por completo** el mismo día, porque U6 corresponde al compañero. No es trabajo de José (ver M1 en I.7).
-- M2–M12: sin empezar.
+- M2 `[x]` · Android pendiente (2026-10-12): CRUD con validación compartida, formulario de alta y edición, y confirmación al eliminar. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio y 17/17 comprobaciones en Chrome (ver «Resultado de M2»).
+- M3–M12: sin empezar.
 
-**Siguiente fase propuesta:** **M2 — U9 pulido del CRUD**. No depende de U6.
+**Siguiente fase propuesta:** **M3 — U1–U3 navegación, interacción y gestos**. Incluye M3.7, el problema visual detectado en M2.
 
-**Esperando autorización del usuario.** No se inicia M2 automáticamente.
+**Esperando autorización del usuario.** No se inicia M3 automáticamente.
 
 ---
 
@@ -1227,6 +1277,7 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-10-12 | M1 (implementación temporal) | Implementación autorizada **sin commit**: `GpsService`, mapa Leaflet 1.9.4 + OSM con marcadores, popup y "Mi ubicación", pestaña Mapa, permisos en el manifest, 22 pruebas nuevas. Validada: 42/42 pruebas, build sin avisos, lint limpio y 24/24 verificaciones en Chrome | (ninguno llegó a commit) |
 | 2026-10-12 | M1 (reversión) | El usuario confirmó que U6 es responsabilidad del compañero, que ya la está desarrollando. Se revirtió todo M1 (código, manifest, `angular.json`, dependencias `leaflet`, `@types/leaflet` y `@types/geojson`) sin guardar parche; `npm ci`; 20/20 pruebas, build OK, `git diff --check` limpio, árbol limpio en `dee57e4` | — (la rama queda como en `dee57e4`) |
 | 2026-10-12 | Plan | Nueva distribución de responsabilidades: U6 devuelta al compañero (I.3, I.4, cabecera); M1 fuera del trabajo de José, con su historial; M2 sin dependencia de GPS; nuevo orden M0→M2→…→M12; M7.7 integración de U6; D2 fuera de alcance; nueva D8; A9–A10, DOC-3 y DOC-9 ajustados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-12 | M2 | CRUD (U9): `validarMovimiento()` compartida; Inicio con validación en el alta rápida, confirmación al eliminar y acceso al formulario; formulario de Kilsy convertido en página Ionic de alta y edición (lazy en `/tabs/inicio/movimiento/*`, conserva la ubicación); retirado `MovimientosListaComponent`. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio, 17/17 en Chrome. Pendiente M3.7 (filas apretadas en móvil) | `app.routes.ts`, `features/inicio/home.page.*` (+ spec nuevo), `features/movimientos/validacion.ts` (+ spec), `features/movimientos/movimientos-form/*`, `features/movimientos/movimientos-lista/*` (eliminado), `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 

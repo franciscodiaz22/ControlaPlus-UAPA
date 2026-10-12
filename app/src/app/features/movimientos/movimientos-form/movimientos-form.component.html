@@ -1,54 +1,86 @@
-<div class="formulario">
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/inicio" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ modoEdicion ? 'Editar movimiento' : 'Nuevo movimiento' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <h2>Registrar movimiento</h2>
+<ion-content>
+  <div class="formulario">
+    @if (cargando()) {
+      <p class="nota" role="status">Cargando movimiento…</p>
+    } @else if (noEncontrado()) {
+      <p class="nota" role="alert">Este movimiento ya no existe; puede que se haya eliminado.</p>
+      <button type="button" class="secundario" (click)="volver()">Volver a Inicio</button>
+    } @else {
+      <form (ngSubmit)="guardar()" novalidate>
 
-  <form (ngSubmit)="guardar()">
+        <div class="campo">
+          <label for="concepto">Concepto</label>
+          <input
+            type="text"
+            id="concepto"
+            name="concepto"
+            [(ngModel)]="concepto"
+            (ngModelChange)="revalidar()"
+            placeholder="Ejemplo: Compra de alimentos"
+            autocomplete="off"
+            [attr.aria-invalid]="!!errores().concepto"
+            aria-describedby="error-concepto"
+          />
+          @if (errores().concepto; as error) {
+            <p class="error" id="error-concepto" role="alert">{{ error }}</p>
+          }
+        </div>
 
-    <div class="campo">
-      <label for="concepto">Concepto</label>
+        <div class="campo">
+          <label for="monto">Monto (RD$)</label>
+          <input
+            type="number"
+            id="monto"
+            name="monto"
+            [(ngModel)]="monto"
+            (ngModelChange)="revalidar()"
+            min="0"
+            step="0.01"
+            inputmode="decimal"
+            placeholder="0.00"
+            [attr.aria-invalid]="!!errores().monto"
+            aria-describedby="error-monto"
+          />
+          @if (errores().monto; as error) {
+            <p class="error" id="error-monto" role="alert">{{ error }}</p>
+          }
+        </div>
 
-      <input
-        type="text"
-        id="concepto"
-        name="concepto"
-        [(ngModel)]="concepto"
-        placeholder="Ejemplo: Compra de alimentos"
-        required
-      />
-    </div>
+        <div class="campo">
+          <label for="tipo">Tipo de movimiento</label>
+          <select
+            id="tipo"
+            name="tipo"
+            [(ngModel)]="tipo"
+            (ngModelChange)="revalidar()"
+            [attr.aria-invalid]="!!errores().tipo"
+          >
+            <option value="gasto">Gasto</option>
+            <option value="ingreso">Ingreso</option>
+          </select>
+          @if (errores().tipo; as error) {
+            <p class="error" role="alert">{{ error }}</p>
+          }
+        </div>
 
-    <div class="campo">
-      <label for="monto">Monto</label>
+        @if (conservaUbicacion) {
+          <p class="nota">La ubicación registrada de este movimiento se conserva.</p>
+        }
 
-      <input
-        type="number"
-        id="monto"
-        name="monto"
-        [(ngModel)]="monto"
-        min="0"
-        step="0.01"
-        required
-      />
-    </div>
+        <button type="submit" [disabled]="guardando()">
+          {{ modoEdicion ? 'Guardar cambios' : 'Guardar movimiento' }}
+        </button>
 
-    <div class="campo">
-      <label for="tipo">Tipo de movimiento</label>
-
-      <select
-        id="tipo"
-        name="tipo"
-        [(ngModel)]="tipo"
-        required
-      >
-        <option value="gasto">Gasto</option>
-        <option value="ingreso">Ingreso</option>
-      </select>
-    </div>
-
-    <button type="submit">
-      Guardar movimiento
-    </button>
-
-  </form>
-
-</div>
+      </form>
+    }
+  </div>
+</ion-content>

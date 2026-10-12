@@ -1,14 +1,45 @@
-.formulario {
-  max-width: 500px;
-  margin: 30px auto;
-  padding: 25px;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* Línea gráfica Cyber de Controla+ (mismos valores que Inicio y QR) */
+$grafito: #0a0f14;
+$hielo: #e8f6f5;
+$cian: #22e0d6;
+$card: #121a22;
+$borde: #1e2a35;
+$coral: #ff5a6e;
+$muted: #7c8b99;
+$mono: 'Martian Mono', ui-monospace, Menlo, monospace;
+$display: 'Unbounded', 'Avenir Next', system-ui, sans-serif;
+
+ion-toolbar {
+  --background: #{$grafito};
+  --color: #{$hielo};
+  --border-color: #{$borde};
+  --border-width: 0 0 1px 0;
+  --border-style: solid;
 }
 
-h2 {
-  margin-bottom: 20px;
+ion-title {
+  font-family: $display;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  font-size: 20px;
+}
+
+ion-back-button {
+  --color: #{$cian};
+}
+
+ion-content {
+  --background: #{$grafito};
+  --color: #{$hielo};
+}
+
+.formulario {
+  max-width: 500px;
+  margin: 24px auto;
+  padding: 24px 20px;
+  border: 1px solid $borde;
+  border-radius: 14px;
+  background: $card;
 }
 
 .campo {
@@ -18,22 +49,66 @@ h2 {
 label {
   display: block;
   margin-bottom: 6px;
-  font-weight: bold;
+  color: $cian;
+  font-family: $mono;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 input,
 select {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid $borde;
+  border-radius: 10px;
   box-sizing: border-box;
+  background: $grafito;
+  color: $hielo;
+  font-size: 16px;
+
+  &:focus {
+    outline: none;
+    border-color: $cian;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: $coral;
+  }
+}
+
+.error {
+  margin: 6px 0 0;
+  color: $coral;
+  font-size: 13px;
+}
+
+.nota {
+  margin: 0 0 16px;
+  color: $muted;
+  font-size: 13px;
 }
 
 button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
+  background: $cian;
+  color: $grafito;
+  font-family: $mono;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+
+  &.secundario {
+    border: 1px solid $cian;
+    background: transparent;
+    color: $cian;
+  }
 }

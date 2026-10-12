@@ -5,9 +5,14 @@
  * etiqueta "⏳ Pendiente de sincronizar" y botón (+) para registrar un
  * movimiento. Todo el trabajo de red/almacenamiento vive en los servicios;
  * la página solo pinta y delega.
+ *
+ * CRUD (U9): el alta rápida es la alerta del botón (+); "Formulario" y
+ * "Editar" abren MovimientosFormComponent; eliminar pide confirmación. Las
+ * reglas de validación son las de features/movimientos/validacion.ts.
  */
 import { Component, inject, signal } from '@angular/core';
 import { AsyncPipe, CurrencyPipe, DatePipe, NgFor, NgIf } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   AlertController,
   IonContent,
@@ -33,6 +38,7 @@ import { ApiService } from '../../core/offline/api.service';
 import { MovimientosService } from '../../core/offline/movimientos.service';
 import { Movimiento, TipoMovimiento, UbicacionMovimiento } from '../../core/offline/movimiento.model';
 import { MENSAJES } from '../../core/offline/mensajes';
+import { validarMovimiento } from '../movimientos/validacion';
 
 @Component({
   selector: 'app-home',
@@ -55,6 +61,7 @@ import { MENSAJES } from '../../core/offline/mensajes';
     IonFab,
     IonFabButton,
     IonIcon,
+    RouterLink,
     NetworkStatusComponent,
   ],
   templateUrl: './home.page.html',
@@ -129,12 +136,12 @@ export class HomePage {
   }
 
   private guardar(datos: { concepto?: string; monto?: string }, tipo: TipoMovimiento): boolean {
-    const concepto = (datos.concepto ?? '').trim();
-    const monto = Number(datos.monto);
-    if (!concepto || !(monto > 0)) {
+    const resultado = validarMovimiento({ ...datos, tipo });
+    if (!resultado.ok) {
+      void this.toast(resultado.mensaje);
       return false; // mantiene la alerta abierta
     }
-    void this.movimientos.registrar({ concepto, monto, tipo, ubicacion: this.ubicacionCapturada });
+    void this.movimientos.registrar({ ...resultado.datos, ubicacion: this.ubicacionCapturada });
     this.ubicacionCapturada = undefined;
     return true;
   }
@@ -163,56 +170,29 @@ export class HomePage {
     const toast = await this.toastCtrl.create({ message, duration: 3000, position: 'bottom' });
     await toast.present();
   }
-    /** Elimina un movimiento por su id mediante el servicio de movimientos. */
-  async eliminarMovimiento(id: string): Promise<void> {
-    await this.movimientos.eliminar(id);
-  }
-    /** Edita los datos de un movimiento existente. */
-  async editarMovimiento(movimiento: Movimiento): Promise<void> {
+  /**
+   * Pide confirmación y, si se acepta, elimina el movimiento con el servicio
+   * (queda como eliminación pendiente hasta sincronizar). La edición se hace
+   * en el formulario (botón "Editar" de la lista).
+   */
+  async eliminarMovimiento(movimiento: Movimiento): Promise<void> {
     const alerta = await this.alertCtrl.create({
-      header: 'Editar movimiento',
-      inputs: [
-        {
-          name: 'concepto',
-          type: 'text',
-          value: movimiento.concepto,
-          placeholder: 'Concepto',
-        },
-        {
-          name: 'monto',
-          type: 'number',
-          value: movimiento.monto,
-          placeholder: 'Monto en RD$',
-          min: 1,
-        },
-      ],
+      header: '¿Eliminar movimiento?',
+      // subHeader se muestra como texto: el concepto puede venir de otro teléfono.
+      subHeader: movimiento.concepto,
+      message: 'Se quitará de este teléfono y del servidor al sincronizar.',
+      cssClass: 'alerta-controla',
       buttons: [
+        { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Cancelar',
-          role: 'cancel',
-        },
-        {
-          text: 'Guardar',
-          handler: (datos) => {
-            const concepto = (datos.concepto ?? '').trim();
-            const monto = Number(datos.monto);
-
-            if (!concepto || !(monto > 0)) {
-              return false;
-            }
-
-            void this.movimientos.actualizar({
-              ...movimiento,
-              concepto,
-              monto,
-            });
-
-            return true;
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: () => {
+            void this.movimientos.eliminar(movimiento.id);
           },
         },
       ],
     });
-
     await alerta.present();
   }
 

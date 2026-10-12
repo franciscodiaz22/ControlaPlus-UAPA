@@ -114,6 +114,24 @@ ion-content {
   color: $cian;
 }
 
+/* Título de la lista + acceso al formulario de alta */
+.seccion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .seccion {
+    margin-bottom: 8px;
+  }
+
+  ion-button {
+    --color: #{$cian};
+    margin-top: 18px;
+    font-family: $mono;
+    font-size: 11px;
+  }
+}
+
 ion-list {
   background: transparent;
   padding: 0;

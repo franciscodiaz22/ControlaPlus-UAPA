@@ -5,11 +5,13 @@
  * Las pantallas cuelgan de TabsPage (barra de pestañas):
  *   /tabs/inicio     → Home de modo_offline (balance y movimientos)
  *   /tabs/compartir  → Compartir Cerca (BLE)
- * Se deja además el alias /compartir para abrirla directamente.
+ *   /tabs/inicio/movimiento/nuevo → formulario de alta (CRUD, U9)
+ *   /tabs/inicio/movimiento/:id   → formulario de edición (CRUD, U9)
+ * Se deja además el alias /compartir para abrirla directamente, y /nuevo
+ * redirige al formulario de alta.
  */
 
 import { Routes } from '@angular/router';
-import { MovimientosFormComponent } from './features/movimientos/movimientos-form/movimientos-form.component';
 
 export const routes: Routes = [
   {
@@ -38,6 +40,23 @@ export const routes: Routes = [
           import('./features/qr/qr.page').then((m) => m.QrPage),
       },
 
+      // Formulario de movimientos dentro de la pestaña Inicio (alta / edición).
+      {
+        path: 'inicio/movimiento/nuevo',
+        loadComponent: () =>
+          import('./features/movimientos/movimientos-form/movimientos-form.component').then(
+            (m) => m.MovimientosFormComponent
+          ),
+      },
+
+      {
+        path: 'inicio/movimiento/:id',
+        loadComponent: () =>
+          import('./features/movimientos/movimientos-form/movimientos-form.component').then(
+            (m) => m.MovimientosFormComponent
+          ),
+      },
+
       {
         path: '',
         redirectTo: 'inicio',
@@ -56,7 +75,8 @@ export const routes: Routes = [
 
   {
     path: 'nuevo',
-    component: MovimientosFormComponent,
+    redirectTo: 'tabs/inicio/movimiento/nuevo',
+    pathMatch: 'full',
   },
 
   {
