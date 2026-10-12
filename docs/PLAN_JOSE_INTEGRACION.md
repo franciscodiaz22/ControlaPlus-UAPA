@@ -69,7 +69,7 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 |---|---|---|---|---|---|
 | U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[x]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy); rutas revisadas en M3; indicador de red en todas las pestañas (M3.4) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); ~~indicador de red solo en Inicio~~ (resuelto en M3.4); revisar las rutas cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7) | M2 `[x]`, M3 `[x]`, M4, M7 |
 | U3 | Componentes, interacciones y gestos | Francisco | `[x]` · Android pendiente. Filas deslizables (`ion-item-sliding`) con Editar/Eliminar, pull-to-refresh (`ion-refresher`) que sincroniza y toque en la fila para editar | Pruebas táctiles en Android (A11, A15) y evidencias (M9). Gesto personalizado solo si D1 lo exige | M3 `[x]`, M8, M9 |
-| U4 | Conectividad | José | `[x]` · Android pendiente | Solo las pruebas Android (I.10) | M8 |
+| U4 | Conectividad | José | `[x]` · **validado en Android** (emulador, Android 17 / API 37, 2026-10-12: A1–A5 OK; ver «M8 — bloque U4 adelantado») | Pendientes reales: repetir en un teléfono físico; ejecutar uno por uno los casos 1–6 de 3.2; backend real en U10 (M6) | M8 (bloque U4) `[x]` |
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
 | U7 | Audio y video | Francisco | `[ ]` | Todo el módulo | M4 |
@@ -374,7 +374,7 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 - **Riesgos:** regresiones cruzadas en `home.page.*` (archivo tocado por 3 personas, y el compañero de U6 probablemente lo toque también) y en `app.routes.ts`.
 - **Condición de completada:** todo en verde, sin errores de lint en el código de la app (o con los restantes justificados), configuración limpia; commit y push.
 
-### M8 — Pruebas Android `[!]`
+### M8 — Pruebas Android `[~]` (bloque U4 `[x]`; A6–A15 `[!]`)
 
 - **Objetivo:** validar en un dispositivo real todo lo marcado `· Android pendiente`.
 - **Requisitos:** todas las unidades con hardware: U4, U5, U7, U8, U10, y U6 si su PR ya está integrado (M7.7; sus casos A9–A10 los define y valida con su responsable). Antiguas 5.3 y 5.4.
@@ -382,6 +382,60 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 - **Dependencias:** M7; teléfono Android (y un segundo teléfono para BLE); servidor de M6 accesible desde el teléfono.
 - **Riesgos:** ruta de Windows con caracteres no ASCII (D6), versión de Java/Gradle (Ángel documentó usar JBR 21), driver del emulador.
 - **Condición de completada:** checklist con un resultado real por caso; los fallos se corrigen (volviendo a la fase dueña) o quedan documentados como limitación.
+- **Estado:** `[~]`. El bloque U4 se adelantó y quedó validado (ver abajo). El resto de M8 sigue `[!]`: A6–A15, más U6 si se integra.
+
+#### M8 — bloque U4 adelantado: resultado (2026-10-12)
+
+Se ejecutó por decisión del usuario (Opción A: sin renumerar fases). **Sin cambios de código.**
+
+**Entorno:**
+- **Emulador:** AVD `Pixel_6`. Modelo `sdk_gphone16k_x86_64`, **Android 17 (API 37)**, imagen Google APIs x86_64 con páginas de 16 KB.
+- **APK:** `npm run build` (configuración de producción, API simulada) + `npx cap sync android` + `gradlew assembleDebug` (BUILD SUCCESSFUL), instalado con `adb install`.
+- **Observación:**
+  - con `adb` (modo avión con `cmd connectivity airplane-mode`, `am force-stop`, `adb reboot`, `KEYCODE_HOME`);
+  - con el WebView depurable por CDP (DOM, toasts e IndexedDB);
+  - con `adb logcat -s Capacitor/Console`.
+- **`cap sync`:** solo reescribió `capacitor.build.gradle` y `capacitor.settings.gradle` con contenido idéntico (únicamente cambió el final de línea). Se restauraron y `git status` quedó limpio.
+
+| Caso | Prueba | Resultado | Evidencia |
+|---|---|---|---|
+| A | Inicio correcto | **OK** | Inicio con datos demo |
+| B | Estado ONLINE | **OK** | Píldora "ONLINE", sin banner |
+| C | Modo avión | **OK** | Píldora "OFFLINE" + banner "Sin conexión a Internet"; logcat `Estado de red: false · tipo: none` |
+| D | Registrar sin Internet (2) | **OK** | logcat: 2 × "Offline: movimiento guardado localmente como pendiente"; una sonda vio los 2 toasts "guardado" visibles a la vez. *El observador del script principal solo capturó 1 toast; era un fallo de medición, no de la app* |
+| E | Quedan pendientes | **OK** | Etiqueta "⏳ Pendiente de sincronizar" en ambos |
+| F | Contador | **OK** | "⏳ 2 movimientos pendientes de sincronizar"; 0 intentos de envío sin red |
+| G/H | Cierre forzado + reapertura sin red | **OK** | Mismos 2 pendientes en IndexedDB y en la UI, contador 2 |
+| G/H | Reinicio del teléfono (`adb reboot`, sigue en modo avión) + reapertura | **OK** | Contador 2, píldora OFFLINE |
+| I | Restaurar conexión | **OK** | Píldora ONLINE; logcat `Estado de red: true` |
+| J | Sincronización automática | **OK** | Un solo envío: `SyncService: enviando 2 pendiente(s) · origen: reconexión`; toast "Prueba completada: 2…" |
+| K | Dejan de estar pendientes | **OK** | Sin etiquetas ni contador |
+| L | Sin duplicados | **OK** | 1 envío con 2 movimientos; al final, 8 movimientos, 8 ids únicos y todos `sincronizado` en IndexedDB |
+| M | Fallo de API y reintentos (botón "Simular fallo de API") | **OK** | Ver la línea de tiempo bajo la tabla |
+| N/O-1 | Pendiente sin red → segundo plano → vuelve la red → primer plano | **OK** | 0 envíos en segundo plano (el plugin no emite eventos en pausa, como se analizó en 1.3); al volver, `Estado de red: true` → un envío `origen: reconexión`; contador a 0 |
+| N/O-2 | Con red → segundo plano → se corta la red → primer plano | **OK** | Píldora OFFLINE + banner al volver |
+| O | Recuperar la conexión tras volver al primer plano | **OK** | Píldora ONLINE |
+| A5 | Permisos de red en el APK (`aapt dump permissions`) | **OK** | `android.permission.INTERNET` y `android.permission.ACCESS_NETWORK_STATE` |
+
+**Línea de tiempo de M:**
+1. Primer registro: falla el envío directo.
+2. Reintento a los **6 s**: falla.
+3. Segundo registro durante la racha: falla y cuenta como un fallo más.
+4. Reintento a los **24 s**: falla.
+5. Se desactiva el fallo; reintento a los **48 s**: un solo envío de 2 → todo sincronizado.
+
+Hubo 2 avisos ámbar, uno por cada registro cuyo envío directo falló (lo hace `MovimientosService.registrar()`). `SyncService` no añadió avisos en sus reintentos.
+
+**Observaciones (no son fallos):**
+- Al arrancar, logcat muestra 2 errores `Error injecting safe area CSS`. Los genera el código que Capacitor inyecta en el WebView, no el código de la app, y no afectaron a ninguna prueba.
+- En el emulador, el plugin de red emite `networkStatusChange` repetidos (`true · wifi`) cada pocos segundos. No provocan sincronizaciones extra porque `isOnline$` usa `distinctUntilChanged`.
+
+**No probado:**
+- teléfono físico (solo emulador);
+- los casos 1–6 de 3.2 uno por uno (se cubrieron los dos escenarios principales N/O-1 y N/O-2);
+- backend real (U10, M6).
+
+Las pruebas A6–A15 no forman parte de este bloque.
 
 ### M9 — Evidencias `[!]`
 
@@ -460,15 +514,15 @@ M0 ──► M2 (CRUD) ──► M3 (navegación/gestos) ───────�
 
 ## I.10 Pendientes de pruebas Android (lista consolidada)
 
-Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
+A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / API 37), en el «M8 — bloque U4 adelantado». El resto sigue `[!]` hasta M8.
 
 | # | Prueba | Origen | Estado |
 |---|---|---|---|
-| A1 | Modo avión real: indicador, banner, contador y sincronización al volver | 1.1, 4.0 | `[!]` |
-| A2 | Segundo plano / reanudación con cambios de red (casos 1–6 de 3.2) | 1.3, 3.2 | `[!]` |
-| A3 | Persistencia: cierre forzado desde "recientes", reinicio del teléfono, reapertura | 2.3, 4.0 | `[!]` |
-| A4 | Servidor caído: reintentos 6→12→24→48→60 s, un solo aviso; registro durante un reintento | 3.3, 3.4 | `[!]` |
-| A5 | Permiso `ACCESS_NETWORK_STATE` en el manifiesto fusionado | 5.4 | `[!]` |
+| A1 | Modo avión real: indicador, banner, contador y sincronización al volver | 1.1, 4.0 | `[x]` OK en el emulador (casos A–F, I–L) |
+| A2 | Segundo plano / reanudación con cambios de red (casos 1–6 de 3.2) | 1.3, 3.2 | `[x]` OK en los dos escenarios principales (N/O-1, N/O-2, O). Los casos 1–6 de 3.2 no se ejecutaron uno por uno |
+| A3 | Persistencia: cierre forzado desde "recientes", reinicio del teléfono, reapertura | 2.3, 4.0 | `[x]` OK: `am force-stop` y `adb reboot` sin red. El cierre desde "recientes" se cubre con el cierre forzado |
+| A4 | Servidor caído: reintentos 6→12→24→48→60 s, un solo aviso; registro durante un reintento | 3.3, 3.4 | `[x]` OK: esperas de 6 → 24 → 48 s (el registro durante la racha cuenta como fallo y salta la de 12 s); un solo envío al recuperarse. Hubo 2 avisos, uno por registro con fallo directo; `SyncService` no añadió avisos |
+| A5 | Permiso `ACCESS_NETWORK_STATE` en el manifiesto fusionado | 5.4 | `[x]` OK (`aapt dump permissions` sobre `app-debug.apk`) |
 | A6 | BLE entre dos teléfonos: aceptar con red, sin red (→ pendiente → sync) y durante una sync | 3.5 | `[!]` |
 | A7 | CRUD offline en el dispositivo: editar y eliminar sin red, reconectar, sin duplicados | 4.2 | `[!]` |
 | A8 | QR real con ML Kit: QR de datos (GET) y QR con URL (Abrir enlace) | Ángel | `[!]` (la doc de Ángel registra lectura y compilación; falta la captura del enlace) |
@@ -502,7 +556,8 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 - M1: auditada, implementada temporalmente, validada y **revertida por completo** el mismo día, porque U6 corresponde al compañero. No es trabajo de José (ver M1 en I.7).
 - M2 `[x]` · Android pendiente (2026-10-12): CRUD con validación compartida, formulario de alta y edición, y confirmación al eliminar. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio y 17/17 comprobaciones en Chrome (ver «Resultado de M2»).
 - M3 `[x]` · Android pendiente (2026-10-12): filas deslizables, pull-to-refresh, indicador de red en todas las pestañas, toasts coherentes y filas móviles resueltas. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio y 21/21 comprobaciones en Chrome (ver «Resultado de M3»). Pruebas Android y WebView → M8 (A11, A15). El commit lo hace el usuario.
-- M4–M12: sin empezar.
+- **M8 — bloque U4 adelantado** `[x]` (2026-10-12): U4 validado en el emulador Android 17 / API 37 (A1–A5 OK, sin cambios de código). Ver «M8 — bloque U4 adelantado». El resto de M8 sigue pendiente.
+- M4–M7 y M9–M12: sin empezar. M8: solo el bloque U4.
 
 **Siguiente fase propuesta:** **M4 — U7 multimedia (audio y video)**.
 
@@ -591,7 +646,7 @@ Orden recomendado: **0 → 1 → 2 → 3 → 4 → 5 → 6**.
 |---|---|---|---|---|---|---|
 | 1.1 | Verificar detector actual | Confirmar comportamiento real antes de tocar nada | `core/network/*` (solo lectura) | Prueba temporal con Vitest + jsdom **fuera del proyecto** (scratchpad) usando la implementación web real de `@capacitor/network`; lectura del código Android del plugin | ✔ estado inicial; ✔ cambios online/offline en tiempo real sin repetidos; ✔ `connectionType: 'none'` offline; ✔ `refrescar()`; ✔ `init()` idempotente; ✔ banner de reconexión `true` → `false` a los 3 s. ✘ un fallo de `getStatus()` rompía `init()` → 1.2 | [x] |
 | 1.2 | Manejo de error en `init()` | Que un fallo del plugin no deje la app sin detección de red | `core/network/network.service.ts` | `try/catch` independiente para `getStatus()` (conserva `navigator.onLine`) y para `addListener()`, con `console.warn`. Sin cambios de API | Prueba con plugin simulado: `init()` no rechaza, conserva el estado y **sigue recibiendo cambios**; pruebas de 1.1 en verde (6/6); `ng build` OK | [x] |
-| 1.3 | Refrescar al volver del segundo plano | Estado correcto tras `resume` | — (sin cambios) | **Analizada: no requiere código.** El plugin Android (`NetworkPlugin.java`) detiene el monitoreo en `handleOnPause`; en `handleOnResume` lo reactiva (`registerDefaultNetworkCallback`, que emite `onCapabilitiesChanged` con la red actual → evento `networkStatusChange`) y además notifica si se perdió la conexión durante la pausa. En web, el navegador emite `online`/`offline` también en segundo plano. Añadir `@capacitor/app` duplicaría eventos | Confirmación en dispositivo pendiente en **5.3** (modo avión con la app en segundo plano, en ambos sentidos) | [x] |
+| 1.3 | Refrescar al volver del segundo plano | Estado correcto tras `resume` | — (sin cambios) | **Analizada: no requiere código.** El plugin Android (`NetworkPlugin.java`) detiene el monitoreo en `handleOnPause`; en `handleOnResume` lo reactiva (`registerDefaultNetworkCallback`, que emite `onCapabilitiesChanged` con la red actual → evento `networkStatusChange`) y además notifica si se perdió la conexión durante la pausa. En web, el navegador emite `online`/`offline` también en segundo plano. Añadir `@capacitor/app` duplicaría eventos | Confirmación en dispositivo pendiente en **5.3** (modo avión con la app en segundo plano, en ambos sentidos) | [x] *(2026-10-12: confirmado en el emulador Android, M8 — bloque U4 adelantado, casos N/O)* |
 | 1.4 | Indicador visible fuera de Inicio | Que el estado se vea en todas las pestañas | `layout/tabs/*` o `features/compartir/*` | **Solo proponer**; el componente ya es reutilizable (`<app-network-status vista="pill">`) | Acordado con Francisco | [!] Francisco → **[ ] trasladada a M3 (M3.4)** |
 
 ### FASE 2 — Modo Offline y persistencia
@@ -600,7 +655,7 @@ Orden recomendado: **0 → 1 → 2 → 3 → 4 → 5 → 6**.
 |---|---|---|---|---|---|---|
 | 2.1 | Serializar escrituras en almacenamiento | Evitar pérdida de movimientos por escrituras solapadas (hueco 3) | `core/offline/offline-storage.service.ts` | Cola interna de promesas + método privado `escribir(transformar)`; `agregar`, `marcarSincronizados` y `limpiar` la usan. API pública, clave y formato sin cambios | Casos A–F sin pérdida (incluido el motor real), G–J (orden, cálculo en su turno, fallo de escritura, API); Fase 1 en verde; build OK; lint sin errores nuevos. Ver «Resultado de 2.1» | [x] |
 | 2.2 | Mostrar contador de pendientes | Que el usuario vea la cola (hueco 7) | `features/inicio/home.page.ts/.html/.scss` | Línea ámbar en la tarjeta de balance con el `pendientes$` existente; oculta con 0. Ver «Resultado de 2.2» | Render de la plantilla real con servicios reales: 0 → oculto; 1 → singular; 3 → plural; reconexión → sync → desaparece. Build OK; lint sin errores nuevos | [x] |
-| 2.3 | Verificar persistencia tras cierre | Confirmar que la cola sobrevive | — (sin cambios de código) | Prueba real en Chrome con la app compilada: registrar offline → cerrar el navegador → reabrir offline → reconectar. Ver «Resultado de 2.3» | Pendientes, contador, lista, balance e IndexedDB idénticos tras reabrir; al reconectar se sincronizan los 2 y el contador desaparece | [x] (navegador) · Android pendiente en 5.3 |
+| 2.3 | Verificar persistencia tras cierre | Confirmar que la cola sobrevive | — (sin cambios de código) | Prueba real en Chrome con la app compilada: registrar offline → cerrar el navegador → reabrir offline → reconectar. Ver «Resultado de 2.3» | Pendientes, contador, lista, balance e IndexedDB idénticos tras reabrir; al reconectar se sincronizan los 2 y el contador desaparece | [x] (navegador) · Android pendiente en 5.3 *(2026-10-12: validado en el emulador Android, M8 — bloque U4 adelantado, casos G/H)* |
 | 2.4 | Contrato de almacenamiento con el CRUD | Que el CRUD use el mismo almacenamiento y la cola | `core/offline/offline-storage.service.ts`, `movimiento.model.ts` | **Solo acordar** con Kilsy: qué métodos necesita (actualizar/eliminar) y cómo se sincronizan ediciones y borrados. No implementar CRUD | Acuerdo escrito en la sección 4 | **[x]** cumplida con la integración CRUD de `4648919` (2026-10-07): actualizar/eliminar dentro de `OfflineStorageService` vía `escribir()`, sincronizados con versionado y tombstones (ver I.2) |
 
 #### Análisis de la tarea 2.1 (2026-09-30), sin modificar código
@@ -1103,7 +1158,7 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 
 | # | Tarea | Objetivo | Archivos | Acción | Verificación | Estado |
 |---|---|---|---|---|---|---|
-| 4.0 | Validación de integración del módulo | Comprobar que Conectividad + Offline + Sync (fases 1–3) funcionan juntos dentro de la app | `app.component.ts`, `core/network/*`, `core/offline/*`, `features/inicio/*` y el flujo de `ble-receptor.service.ts` (solo lectura) | Revisión del código integrado, batería de integración I1–I6, regresión completa y prueba de punta a punta en Chrome. **Sin cambios de código** (no se encontró ningún problema de integración). Ver «Resultado de la Fase 4 (4.0)» | 67/67 automatizadas; 21/21 verificaciones en Chrome real; build OK; 0 errores de lint nuevos | [x] (navegador) · Android en 5.3 |
+| 4.0 | Validación de integración del módulo | Comprobar que Conectividad + Offline + Sync (fases 1–3) funcionan juntos dentro de la app | `app.component.ts`, `core/network/*`, `core/offline/*`, `features/inicio/*` y el flujo de `ble-receptor.service.ts` (solo lectura) | Revisión del código integrado, batería de integración I1–I6, regresión completa y prueba de punta a punta en Chrome. **Sin cambios de código** (no se encontró ningún problema de integración). Ver «Resultado de la Fase 4 (4.0)» | 67/67 automatizadas; 21/21 verificaciones en Chrome real; build OK; 0 errores de lint nuevos | [x] (navegador) · Android en 5.3 *(2026-10-12: validado en el emulador Android, M8 — bloque U4 adelantado)* |
 | 4.1 | Integración con la API REST | Pasar del servidor simulado al real | `core/offline/api.service.ts`, `environments/*` | Acordar con Ángel endpoint, formato e idempotencia por `id`. `ApiService` pasa a delegar en su cliente o se mantiene como único punto de salida | Con `usarServidorSimulado: false` la sync llega al backend | [!] Ángel → **[ ] trasladada a M6** (decisión D4) |
 | 4.2 | Integración con CRUD | CRUD y offline sobre el mismo almacenamiento | según el acuerdo 2.4 | Revisar el PR de Kilsy y adaptar solo lo necesario en `core/offline` | Crear/editar/eliminar offline y sincronizar | **[x]** (navegador y pruebas del repo) · Android pendiente (I.10, A7). Realizada en `4648919` (2026-10-07); ver «Resultado de la tarea 4.2» en I.2 |
 | 4.3 | Integración con la interfaz | Consistencia visual del indicador, el contador y los toasts | `core/network/network-status.component.scss`, `theme/conectividad.scss`, `features/inicio/home.page.scss` | Si Francisco define tokens globales, cambiar los colores fijos por esos tokens | Revisión visual con Francisco | [!] Francisco → **[ ] trasladada a M3 (M3.5)** |
@@ -1175,8 +1230,8 @@ En los tres: **0 solapes**; al final `enVuelo` vacío, sin temporizador y `fallo
 |---|---|---|---|---|---|---|
 | 5.1 | Pruebas unitarias del módulo | Cobertura mínima de la lógica | nuevos `*.spec.ts` junto a `network.service.ts`, `offline-storage.service.ts`, `sync.service.ts`, `movimientos.service.ts`, `home.page.ts` | Vitest con mocks de `@capacitor/network`, `Storage` y `ApiService` (sin instalar paquetes). Base disponible: las pruebas temporales de las fases 1–3 (red, cola de escrituras, contador y arranque) se pueden portar | `npx ng test` en verde | **[~]** 20 pruebas en el repo desde `4648919` (CRUD + sync + persistencia + componentes). Faltan specs propios de red, sync al arranque/reintentos y contador → cada fase M añade las suyas; cierre en M7 |
 | 5.2 | Pruebas manuales en navegador | Escenarios A–D del diseño | — | DevTools offline/online + `simularFallo`. Ya se hizo una prueba real en Chrome para 2.3 | Checklist A (online), B (offline con pendiente), C (reconexión), D (fallo de sync) | [ ] → **M7 (M7.1)** |
-| 5.3 | Pruebas en Android | Validar en un dispositivo real | — | `npx @ionic/cli build` + `npx cap sync android` (copia la web, no cambia la configuración) + modo avión | Mismos escenarios + cierre forzado/reapertura + reinicio del teléfono + segundo plano (1.3) | [!] → **M8** (checklist I.10, A1–A4) |
-| 5.4 | Verificar permisos fusionados | Confirmar `ACCESS_NETWORK_STATE` | manifiesto fusionado de Gradle (solo lectura) | Revisar | Permiso presente | [!] → **M8** (I.10, A5) |
+| 5.3 | Pruebas en Android | Validar en un dispositivo real | — | `npx @ionic/cli build` + `npx cap sync android` (copia la web, no cambia la configuración) + modo avión | Mismos escenarios + cierre forzado/reapertura + reinicio del teléfono + segundo plano (1.3) | [!] → **M8** (checklist I.10, A1–A4). *2026-10-12: A1–A4 `[x]` en el emulador (M8 — bloque U4 adelantado); queda repetirlo en un teléfono físico* |
+| 5.4 | Verificar permisos fusionados | Confirmar `ACCESS_NETWORK_STATE` | manifiesto fusionado de Gradle (solo lectura) | Revisar | Permiso presente | [!] → **M8** (I.10, A5). *2026-10-12: A5 `[x]` (`aapt dump permissions` sobre el APK debug)* |
 | 5.5 | Coordinar con el plan de pruebas general | Que las pruebas del módulo entren en el informe de Ángel | — | Entregar checklist y resultados | Ángel las incluye | [!] Ángel → **M10** (anexo de pruebas, I.11 DOC-8; lo completa José) |
 
 ### FASE 6 — Documentación y evidencias
@@ -1322,6 +1377,7 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-10-12 | Plan | Nueva distribución de responsabilidades: U6 devuelta al compañero (I.3, I.4, cabecera); M1 fuera del trabajo de José, con su historial; M2 sin dependencia de GPS; nuevo orden M0→M2→…→M12; M7.7 integración de U6; D2 fuera de alcance; nueva D8; A9–A10, DOC-3 y DOC-9 ajustados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-12 | M2 | CRUD (U9): `validarMovimiento()` compartida; Inicio con validación en el alta rápida, confirmación al eliminar y acceso al formulario; formulario de Kilsy convertido en página Ionic de alta y edición (lazy en `/tabs/inicio/movimiento/*`, conserva la ubicación); retirado `MovimientosListaComponent`. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio, 17/17 en Chrome. Pendiente M3.7 (filas apretadas en móvil) | `app.routes.ts`, `features/inicio/home.page.*` (+ spec nuevo), `features/movimientos/validacion.ts` (+ spec), `features/movimientos/movimientos-form/*`, `features/movimientos/movimientos-lista/*` (eliminado), `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-12 | M3 | U1–U3: rutas revisadas sin cambios; filas de Inicio con `ion-item-sliding` (Editar/Eliminar) y toque para editar (resuelve M3.7); pull-to-refresh → `SyncService.sincronizar('manual')`; banners de conectividad en la barra de pestañas (todas las pestañas); toasts con estilo común y por encima de la barra y del banner. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio, 21/21 en Chrome. M3.6 no necesario (depende de D1). Android/WebView → M8 (A11, A15). Commit a cargo del usuario | `features/inicio/home.page.*` (+ spec), `layout/tabs/*`, `theme/conectividad.scss`, `features/movimientos/movimientos-form/movimientos-form.component.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-12 | M8 (bloque U4 adelantado) | Validación de U4 en Android sin cambios de código: emulador `Pixel_6` (`sdk_gphone16k_x86_64`, Android 17 / API 37), APK debug (build + `cap sync` + `assembleDebug`). A1–A5 OK (casos A–O): offline, persistencia tras cierre forzado y reinicio, reconexión con un solo envío, sin duplicados, reintentos 6 → 24 → 48 s con API simulada, segundo plano, permisos `INTERNET` y `ACCESS_NETWORK_STATE`. `cap sync` solo cambió finales de línea en 2 archivos Gradle (restaurados). No probado: teléfono físico, casos 1–6 de 3.2 uno por uno, backend real | `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 
