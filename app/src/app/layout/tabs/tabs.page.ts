@@ -10,7 +10,12 @@ import {
   IonTabs,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { bluetoothOutline, homeOutline, qrCodeOutline } from 'ionicons/icons';
+import {
+  bluetoothOutline,
+  homeOutline,
+  mapOutline,
+  qrCodeOutline,
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-tabs',
@@ -20,6 +25,6 @@ import { bluetoothOutline, homeOutline, qrCodeOutline } from 'ionicons/icons';
 })
 export class TabsPage {
   constructor() {
-    addIcons({ homeOutline, bluetoothOutline, qrCodeOutline });
+    addIcons({ homeOutline, bluetoothOutline, qrCodeOutline, mapOutline });
   }
 }

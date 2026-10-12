@@ -39,6 +39,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- Compartir Cerca (emisor): BleClient.initialize({ androidNeverForLocation: true })
          exige declarar BLUETOOTH_SCAN con neverForLocation. El resto de permisos

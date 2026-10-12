@@ -36,7 +36,7 @@
             "styles": ["src/global.scss", "src/theme/variables.scss"],
             "scripts": [],
             "browser": "src/main.ts",
-            "allowedCommonJsDependencies": ["localforage"]
+            "allowedCommonJsDependencies": ["localforage", "leaflet"]
           },
           "configurations": {
             "production": {

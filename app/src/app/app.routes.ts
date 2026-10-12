@@ -39,6 +39,12 @@ export const routes: Routes = [
       },
 
       {
+        path: 'mapa',
+        loadComponent: () =>
+          import('./features/mapa/mapa.page').then((m) => m.MapaPage),
+      },
+
+      {
         path: '',
         redirectTo: 'inicio',
         pathMatch: 'full',
