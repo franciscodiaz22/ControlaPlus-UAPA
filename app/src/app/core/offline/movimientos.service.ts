@@ -75,10 +75,11 @@ export class MovimientosService {
     if (!this.sync.reservarEnvio([movimiento.id]).length) {
       return movimiento;
     }
-    let cambioDuranteEnvio = false;
+    let enviado = false;
     try {
       await this.api.enviarMovimientos([movimiento]);
-      cambioDuranteEnvio = (await this.storage.marcarSincronizados([movimiento])).length > 0;
+      await this.storage.marcarSincronizados([movimiento]);
+      enviado = true;
       await this.toast(
         environment.usarServidorSimulado ? 'Registro completado con API simulada (POST).' : MENSAJES.toastEnviadoOnline,
         'cian',
@@ -90,9 +91,12 @@ export class MovimientosService {
     } finally {
       this.sync.liberarEnvio([movimiento.id]);
     }
-    // Se editó o eliminó mientras se enviaba: sigue pendiente y vuelve a la
-    // sincronización normal (después de liberarlo, para que pueda reservarlo).
-    if (cambioDuranteEnvio) {
+    // Se editó o eliminó mientras se enviaba o se mostraba el aviso (una
+    // sincronización pedida entonces lo saltó porque estaba reservado): sigue
+    // pendiente y vuelve a la sincronización normal. Se comprueba después de
+    // liberarlo, para que la sincronización pueda reservarlo; si hay otra en
+    // curso, esta queda marcada para una segunda vuelta.
+    if (enviado && (await this.storage.pendientes()).some((m) => m.id === movimiento.id)) {
       void this.sync.sincronizar('cambio durante el envío');
     }
     return movimiento;

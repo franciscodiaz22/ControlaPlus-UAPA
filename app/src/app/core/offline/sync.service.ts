@@ -50,6 +50,8 @@ export class SyncService {
   private fallosSeguidos = 0;
   /** Ids que se están enviando ahora mismo (por esta sync o por registrar()). */
   private readonly enVuelo = new Set<string>();
+  /** Alguien pidió sincronizar mientras había una sincronización en curso. */
+  private otraVueltaPendiente = false;
 
   private readonly resultadoSubject = new Subject<ResultadoSync>();
   /** Permite a la UI o a las pruebas observar cada intento. */
@@ -93,13 +95,20 @@ export class SyncService {
    * pendientes, no hace nada.
    */
   async sincronizar(origen = 'manual'): Promise<number> {
-    if (this.sincronizando || !this.network.isOnline) {
+    if (!this.network.isOnline) {
+      return 0;
+    }
+    if (this.sincronizando) {
+      // No se ignora: al terminar la sincronización en curso se hará otra vuelta.
+      this.otraVueltaPendiente = true;
       return 0;
     }
     // Se marca ANTES del primer await: dos llamadas simultáneas (arranque,
     // reconexión, reintento) no pueden pasar a la vez. finally la libera.
     this.sincronizando = true;
+    this.otraVueltaPendiente = false;
     let reservados: string[] = [];
+    let fallo = false;
     try {
       const todos = await this.storage.pendientes();
       if (!todos.length) {
@@ -115,25 +124,18 @@ export class SyncService {
 
       console.log(`SyncService: enviando ${pendientes.length} pendiente(s) · origen: ${origen}`);
       await this.api.enviarMovimientos(pendientes);
-      // Los editados o eliminados durante el envío siguen pendientes.
-      const cambiados = await this.storage.marcarSincronizados(pendientes);
+      // Los editados o eliminados durante el envío siguen pendientes; la
+      // segunda vuelta (finally) los vuelve a enviar.
+      await this.storage.marcarSincronizados(pendientes);
       const mensaje = environment.usarServidorSimulado
         ? `Prueba completada: ${pendientes.length} movimiento(s) aceptado(s) por la API simulada.`
         : MENSAJES.toastSyncOk(pendientes.length);
       await this.toast(mensaje, 'cian');
       this.terminarRacha();
       this.resultadoSubject.next({ origen, enviados: pendientes.length });
-      // Si mientras se enviaba llegaron más pendientes (p. ej. por Bluetooth)
-      // o cambió alguno de los enviados, se hace otra vuelta en cuanto se
-      // libere la bandera.
-      const quedan =
-        cambiados.length > 0 ||
-        (await this.storage.pendientes()).some((m) => !this.enVuelo.has(m.id));
-      if (quedan) {
-        setTimeout(() => void this.sincronizar('pendientes nuevos'), 0);
-      }
       return pendientes.length;
     } catch (err) {
+      fallo = true;
       const mensaje = err instanceof Error ? err.message : String(err);
       console.warn('SyncService: fallo al sincronizar →', mensaje);
       // El aviso solo se muestra al empezar una racha de fallos.
@@ -146,7 +148,28 @@ export class SyncService {
     } finally {
       this.liberarEnvio(reservados);
       this.sincronizando = false;
+      // Tras un fallo se encarga el reintento con espera creciente.
+      if (!fallo) {
+        await this.programarOtraVuelta();
+      }
     }
+  }
+
+  /**
+   * Segunda vuelta, ya liberados los ids de este envío: se hace si alguien
+   * pidió sincronizar mientras se enviaba, o si hay pendientes que nadie está
+   * enviando (editados o eliminados durante el envío, registros nuevos, BLE).
+   * Se lanza con setTimeout y vuelve a pasar por la bandera, así que nunca hay
+   * dos sincronizaciones a la vez; y termina sola cuando no queda nada.
+   */
+  private async programarOtraVuelta(): Promise<void> {
+    const solicitada = this.otraVueltaPendiente;
+    const libres = (await this.storage.pendientes()).some((m) => !this.enVuelo.has(m.id));
+    if (this.sincronizando || (!solicitada && !libres)) {
+      return;
+    }
+    this.otraVueltaPendiente = false;
+    setTimeout(() => void this.sincronizar('segunda vuelta'), 0);
   }
 
   /**

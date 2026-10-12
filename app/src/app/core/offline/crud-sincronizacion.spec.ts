@@ -110,6 +110,8 @@ describe('CRUD + sincronización', () => {
   let storage: OfflineStorageService;
   let movimientos: MovimientosService;
   let sync: SyncService;
+  /** Toasts: se pueden retener para reproducir la ventana del aviso de éxito (C1). */
+  let toasts: { mensajes: string[]; retenido?: Promise<void>; soltar?: () => void };
 
   async function montar(inicial: Movimiento[], online = true): Promise<void> {
     almacen = new AlmacenFalso();
@@ -117,6 +119,7 @@ describe('CRUD + sincronización', () => {
     red = new RedFalsa();
     red.conectar(online);
     api = new ApiFalsa();
+    toasts = { mensajes: [] };
     TestBed.configureTestingModule({
       providers: [
         { provide: Storage, useValue: almacen },
@@ -124,7 +127,14 @@ describe('CRUD + sincronización', () => {
         { provide: ApiService, useValue: api },
         {
           provide: ToastController,
-          useValue: { create: async () => ({ present: async () => undefined }) },
+          useValue: {
+            create: async ({ message }: { message: string }) => ({
+              present: async () => {
+                toasts.mensajes.push(message);
+                await toasts.retenido;
+              },
+            }),
+          },
         },
       ],
     });
@@ -382,6 +392,138 @@ describe('CRUD + sincronización', () => {
 
       expect(api.enviados().map((m) => m.id).sort()).toEqual(['a', 'b']);
       expect(almacen.guardados().map((m) => m.id)).toEqual(['a', 'c']);
+    });
+  });
+
+  // ------------------------------------------- C1: SEGUNDA VUELTA
+  // Antes, un cambio hecho mientras la sincronización mostraba su aviso de
+  // éxito (ids aún en vuelo) quedaba pendiente hasta el siguiente evento:
+  // el watcher pedía sincronizar, la sync ocupada lo ignoraba y su
+  // comprobación final saltaba los ids todavía reservados.
+  describe('segunda vuelta (C1)', () => {
+    const retenerToasts = (): void => {
+      toasts.retenido = new Promise((r) => (toasts.soltar = r));
+    };
+    const soltarToasts = (): void => {
+      toasts.retenido = undefined;
+      toasts.soltar?.();
+    };
+    const otraVueltaPendiente = (): boolean => sync['otraVueltaPendiente'];
+    const enVuelo = (id: string): boolean => sync['enVuelo'].has(id);
+
+    it('eliminar mientras la sync muestra el aviso: se marca la segunda vuelta y la eliminación se envía sola, una vez', async () => {
+      await montar([sincronizado('p', { estado: 'pendiente' })]);
+      retenerToasts();
+      const envio = sync.sincronizar('manual');
+      // Enviado y marcado sincronizado, pero la sync sigue ocupada con el aviso.
+      await hastaQue(() => guardado('p')?.estado === 'sincronizado' && toasts.mensajes.length === 1);
+      expect(enVuelo('p')).toBe(true);
+
+      await movimientos.eliminar('p');
+      // El watcher pide sincronizar mientras la primera está ocupada.
+      await hastaQue(otraVueltaPendiente);
+      expect(api.envios.length).toBe(1);
+
+      soltarToasts();
+      await envio;
+      await hastaQue(() => !guardado('p'));
+      expect(api.enviados().map((m) => [m.id, !!m.eliminado, m.version ?? 0])).toEqual([
+        ['p', false, 0],
+        ['p', true, 1],
+      ]);
+      expect(await storage.pendientes()).toEqual([]);
+      expect(otraVueltaPendiente()).toBe(false);
+      await esperar(400);
+      expect(api.envios.length).toBe(2); // sin envíos repetidos
+    });
+
+    it('actualizar mientras la sync muestra el aviso: la versión nueva se envía sola, una vez', async () => {
+      await montar([sincronizado('p', { estado: 'pendiente' })]);
+      retenerToasts();
+      const envio = sync.sincronizar('manual');
+      await hastaQue(() => guardado('p')?.estado === 'sincronizado' && toasts.mensajes.length === 1);
+
+      await movimientos.actualizar({ ...sincronizado('p'), concepto: 'Editado tras el envío' });
+      await hastaQue(otraVueltaPendiente);
+
+      soltarToasts();
+      await envio;
+      await hastaQue(() => guardado('p')?.estado === 'sincronizado' && api.envios.length === 2);
+      expect(api.enviados().map((m) => [m.concepto, m.version ?? 0])).toEqual([
+        ['Concepto p', 0],
+        ['Editado tras el envío', 1],
+      ]);
+      expect(await storage.pendientes()).toEqual([]);
+      await esperar(400);
+      expect(api.envios.length).toBe(2);
+    });
+
+    it('editar mientras registrar() muestra su aviso: tras liberar el id se vuelve a sincronizar', async () => {
+      await montar([]);
+      retenerToasts();
+      const registro = movimientos.registrar({ concepto: 'Nuevo', monto: 10, tipo: 'ingreso' });
+      await hastaQue(() => toasts.mensajes.length === 1);
+      const id = api.envios[0][0].id;
+      expect(guardado(id)?.estado).toBe('sincronizado');
+      expect(enVuelo(id)).toBe(true);
+
+      await movimientos.actualizar({ ...api.envios[0][0], monto: 20 });
+      // El watcher sincroniza, pero salta el id que registrar() aún tiene reservado.
+      await esperar(400);
+      expect(api.envios.length).toBe(1);
+
+      soltarToasts();
+      await registro;
+      await hastaQue(() => guardado(id)?.estado === 'sincronizado' && api.envios.length === 2);
+      expect(api.enviados().map((m) => m.monto)).toEqual([10, 20]);
+      expect(await storage.pendientes()).toEqual([]);
+      await esperar(400);
+      expect(api.envios.length).toBe(2);
+    });
+
+    it('registrar y recibir pendientes durante un envío: cada uno se envía una sola vez y no queda nada', async () => {
+      await montar([sincronizado('p', { estado: 'pendiente' })]);
+      api.bloquear();
+      const envio = sync.sincronizar('manual');
+      await hastaQue(() => api.envios.length === 1);
+
+      // Como un movimiento aceptado por Bluetooth (entra directo al almacén).
+      await storage.agregar(sincronizado('ble', { estado: 'pendiente' }));
+      const registro = movimientos.registrar({ concepto: 'Durante el envío', monto: 5, tipo: 'gasto' });
+      await hastaQue(otraVueltaPendiente);
+
+      api.liberar();
+      await Promise.all([envio, registro]);
+      await hastaQue(async () => (await storage.pendientes()).length === 0);
+      await esperar(400);
+      const ids = api.enviados().map((m) => m.id);
+      expect(ids.filter((x) => x === 'p')).toHaveLength(1);
+      expect(ids.filter((x) => x === 'ble')).toHaveLength(1);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids).toHaveLength(3);
+    });
+
+    it('sin cambios durante el envío no hay segunda vuelta', async () => {
+      await montar([sincronizado('p', { estado: 'pendiente' })]);
+      await sync.sincronizar('manual');
+      await esperar(400);
+      expect(api.envios.length).toBe(1);
+      expect(otraVueltaPendiente()).toBe(false);
+    });
+
+    it('si el envío falla no hay segunda vuelta inmediata: se mantiene el reintento con espera', async () => {
+      await montar([sincronizado('p', { estado: 'pendiente' })]);
+      api.fallar = true;
+      api.bloquear();
+      const envio = sync.sincronizar('manual');
+      await hastaQue(() => api.envios.length === 1);
+      void sync.sincronizar('manual'); // pedido durante el envío
+      expect(otraVueltaPendiente()).toBe(true);
+      api.liberar();
+      await envio;
+      await esperar(400);
+      expect(api.envios.length).toBe(1); // el siguiente intento es el reintento (6 s)
+      expect(guardado('p')?.estado).toBe('pendiente');
     });
   });
 });
