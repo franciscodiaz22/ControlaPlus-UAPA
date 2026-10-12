@@ -67,8 +67,8 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 
 | Unidad | Tema | Responsable original | Estado real | Qué falta | Fase |
 |---|---|---|---|---|---|
-| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[~]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); revisar las rutas finales cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7); indicador de red solo en Inicio (antigua 1.4) | M2, M3, M7 |
-| U3 | Componentes, interacciones y gestos | Francisco | `[ ]` Hay componentes Ionic, pero **ningún gesto** | Gestos reales (`ion-item-sliding`, `ion-refresher`), interacción y evidencias | M3 |
+| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[x]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy); rutas revisadas en M3; indicador de red en todas las pestañas (M3.4) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); ~~indicador de red solo en Inicio~~ (resuelto en M3.4); revisar las rutas cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7) | M2 `[x]`, M3 `[x]`, M4, M7 |
+| U3 | Componentes, interacciones y gestos | Francisco | `[x]` · Android pendiente. Filas deslizables (`ion-item-sliding`) con Editar/Eliminar, pull-to-refresh (`ion-refresher`) que sincroniza y toque en la fila para editar | Pruebas táctiles en Android (A11, A15) y evidencias (M9). Gesto personalizado solo si D1 lo exige | M3 `[x]`, M8, M9 |
 | U4 | Conectividad | José | `[x]` · Android pendiente | Solo las pruebas Android (I.10) | M8 |
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
@@ -234,7 +234,7 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 
 **Pendiente para M3:** las filas de la lista de Inicio quedan apretadas en móvil (monto, Editar y Eliminar en la misma fila). Ya estaba así antes de M2 (ver M3.7). **Pendiente para Android:** A7 (I.10).
 
-### M3 — U1–U3 navegación, interacción y gestos `[ ]`
+### M3 — U1–U3 navegación, interacción y gestos `[x]` · Android pendiente (A11, A15)
 
 - **Objetivo:** navegación final coherente y gestos reales.
 - **Requisitos:** U1–U2 (tabs, rutas, lazy loading) y U3 (componentes, interacción, gestos).
@@ -252,6 +252,47 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 - **Pruebas:** componentes con los gestos presentes; refresco → una sola sync; regresión.
 - **Evidencias:** deslizar un movimiento, pull-to-refresh, indicador en otras pestañas.
 - **Condición de completada:** gestos funcionando en navegador (táctil emulado), rutas revisadas, regresión y build en verde; commit y push.
+
+#### Resultado de M3 (2026-10-12)
+
+| # | Tarea | Resultado | Estado |
+|---|---|---|---|
+| M3.1 | Rutas finales | Revisadas sin cambios: todas lazy, `/nuevo` redirige al formulario, el botón volver regresa a Inicio y las rutas desconocidas van a Inicio | `[x]` |
+| M3.2 | `ion-item-sliding` | Cada fila de Inicio es deslizable. A la izquierda muestra Editar (abre el formulario) y Eliminar (pide confirmación), y la fila se cierra al elegir. Tocar la fila abre su edición | `[x]` · Android A11 |
+| M3.3 | `ion-refresher` | Pull-to-refresh en Inicio que llama a `SyncService.sincronizar('manual')` (C4, sin cambios en SyncService). Sin red avisa y no intenta enviar; si no queda nada pendiente avisa "Todo está sincronizado." | `[x]` · Android A11 |
+| M3.4 | Indicador fuera de Inicio (antigua 1.4) | Los banners offline y "Conexión restablecida" pasan a la barra de pestañas, justo encima de ella, y se ven en todas las pestañas sin tocar la página BLE. La píldora ONLINE/OFFLINE sigue en la cabecera de Inicio, que ya no duplica el banner. *Cambio respecto al diseño original: los banners iban bajo la cabecera de Inicio* | `[x]` |
+| M3.5 | Coherencia visual (antigua 4.3) | Los toasts de Inicio y del formulario usan el estilo `toast-controla`. Todos los toasts quedan por encima de la barra de pestañas y, sin red, también por encima del banner (CSS en `theme/conectividad.scss`) | `[x]` · Android A15 |
+| M3.6 | Gesto adicional | No implementado: deslizar la fila y tirar hacia abajo de la lista ya demuestran dos gestos. Solo se añadiría si la consigna (D1) exige un gesto personalizado | No necesario (depende de D1) |
+| M3.7 | Filas apretadas en móvil (detectado en M2) | Resuelto: las filas ya no llevan botones. A 412 px de ancho el concepto tiene unos 230 px y cabe en una línea | `[x]` |
+
+**Verificación:**
+- **Pruebas:** **43/43**. Se añadieron 6 en `home.page.spec.ts`: editar y eliminar desde la fila deslizable, y pull-to-refresh con red, sin pendientes, con pendientes sin enviar y sin red. Las 18 de CRUD y sincronización siguen intactas.
+- **Build:** `ng build` OK, sin avisos.
+- **Lint:** sin errores en los archivos tocados. Al pasar la lista a `@for`/`@if` se resolvieron los 3 `prefer-control-flow` que quedaban en `home.page.html`.
+- **`git diff --check`:** limpio.
+- **Prueba manual en Chrome:** **21/21** comprobaciones con toques simulados a 412 px:
+  - navegación;
+  - filas;
+  - deslizar → Editar y Eliminar con cancelar;
+  - tocar la fila para editar;
+  - banner sin red en Inicio, Compartir y QR, justo encima de la barra;
+  - píldora OFFLINE;
+  - pull-to-refresh sin red y con red;
+  - banner de reconexión;
+  - toasts sin tapar la barra ni el banner;
+  - sin errores de consola.
+
+**Archivos:**
+- `features/inicio/home.page.html`, `.scss`, `.ts`, `.spec.ts`
+- `layout/tabs/tabs.page.html`, `.ts`
+- `theme/conectividad.scss`
+- `features/movimientos/movimientos-form/movimientos-form.component.ts` (solo el estilo de su toast)
+
+Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
+
+**Pendiente para M8:**
+- **A11:** gestos táctiles reales en el WebView.
+- **A15:** WebView con soporte de `:has()` (Android WebView 105 o posterior) y posición de los toasts sobre la barra y el banner. Las alturas usadas (56 px de barra y unos 83 px de banner) se comprueban en el dispositivo.
 
 ### M4 — U7 multimedia (audio y video) `[ ]`
 
@@ -433,10 +474,11 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 | A8 | QR real con ML Kit: QR de datos (GET) y QR con URL (Abrir enlace) | Ángel | `[!]` (la doc de Ángel registra lectura y compilación; falta la captura del enlace) |
 | A9 | GPS: diálogo de permiso, permiso denegado, captura real | U6 (compañero) | `[!]` Las define y valida el responsable de U6; José las incluye en M8 si U6 está integrada |
 | A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | U6 (compañero) | `[!]` Ídem A9 |
-| A11 | Gestos táctiles reales (deslizar, pull-to-refresh) | M3 | `[!]` |
+| A11 | Gestos táctiles reales (deslizar la fila → Editar/Eliminar, tocar la fila, pull-to-refresh con y sin red) | M3 | `[!]` |
 | A12 | Audio y video locales en el WebView de Android | M4 | `[!]` |
 | A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[!]` |
 | A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[!]` |
+| A15 | WebView: soporte de `:has()` (Android WebView 105 o posterior); toasts por encima de la barra y del banner offline; banner de conectividad sobre la barra en todas las pestañas | M3 | `[!]` |
 
 ## I.11 Documentación, evidencias, README y defensa
 
@@ -459,11 +501,12 @@ Nada de esta lista está probado en un dispositivo. Todo queda `[!]` hasta M8.
 - M0 `[x]` (2026-10-12): plan revisado por el usuario y cerrado con su commit y push autorizados en `feature/jose-integracion`.
 - M1: auditada, implementada temporalmente, validada y **revertida por completo** el mismo día, porque U6 corresponde al compañero. No es trabajo de José (ver M1 en I.7).
 - M2 `[x]` · Android pendiente (2026-10-12): CRUD con validación compartida, formulario de alta y edición, y confirmación al eliminar. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio y 17/17 comprobaciones en Chrome (ver «Resultado de M2»).
-- M3–M12: sin empezar.
+- M3 `[x]` · Android pendiente (2026-10-12): filas deslizables, pull-to-refresh, indicador de red en todas las pestañas, toasts coherentes y filas móviles resueltas. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio y 21/21 comprobaciones en Chrome (ver «Resultado de M3»). Pruebas Android y WebView → M8 (A11, A15). El commit lo hace el usuario.
+- M4–M12: sin empezar.
 
-**Siguiente fase propuesta:** **M3 — U1–U3 navegación, interacción y gestos**. Incluye M3.7, el problema visual detectado en M2.
+**Siguiente fase propuesta:** **M4 — U7 multimedia (audio y video)**.
 
-**Esperando autorización del usuario.** No se inicia M3 automáticamente.
+**Esperando autorización del usuario.** No se inicia M4 automáticamente.
 
 ---
 
@@ -1278,6 +1321,7 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-10-12 | M1 (reversión) | El usuario confirmó que U6 es responsabilidad del compañero, que ya la está desarrollando. Se revirtió todo M1 (código, manifest, `angular.json`, dependencias `leaflet`, `@types/leaflet` y `@types/geojson`) sin guardar parche; `npm ci`; 20/20 pruebas, build OK, `git diff --check` limpio, árbol limpio en `dee57e4` | — (la rama queda como en `dee57e4`) |
 | 2026-10-12 | Plan | Nueva distribución de responsabilidades: U6 devuelta al compañero (I.3, I.4, cabecera); M1 fuera del trabajo de José, con su historial; M2 sin dependencia de GPS; nuevo orden M0→M2→…→M12; M7.7 integración de U6; D2 fuera de alcance; nueva D8; A9–A10, DOC-3 y DOC-9 ajustados. Sin cambios en código | `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-12 | M2 | CRUD (U9): `validarMovimiento()` compartida; Inicio con validación en el alta rápida, confirmación al eliminar y acceso al formulario; formulario de Kilsy convertido en página Ionic de alta y edición (lazy en `/tabs/inicio/movimiento/*`, conserva la ubicación); retirado `MovimientosListaComponent`. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio, 17/17 en Chrome. Pendiente M3.7 (filas apretadas en móvil) | `app.routes.ts`, `features/inicio/home.page.*` (+ spec nuevo), `features/movimientos/validacion.ts` (+ spec), `features/movimientos/movimientos-form/*`, `features/movimientos/movimientos-lista/*` (eliminado), `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-12 | M3 | U1–U3: rutas revisadas sin cambios; filas de Inicio con `ion-item-sliding` (Editar/Eliminar) y toque para editar (resuelve M3.7); pull-to-refresh → `SyncService.sincronizar('manual')`; banners de conectividad en la barra de pestañas (todas las pestañas); toasts con estilo común y por encima de la barra y del banner. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio, 21/21 en Chrome. M3.6 no necesario (depende de D1). Android/WebView → M8 (A11, A15). Commit a cargo del usuario | `features/inicio/home.page.*` (+ spec), `layout/tabs/*`, `theme/conectividad.scss`, `features/movimientos/movimientos-form/movimientos-form.component.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 

@@ -4,8 +4,7 @@
     <!-- 2.1 Píldora ONLINE / OFFLINE -->
     <app-network-status slot="end" vista="pill"></app-network-status>
   </ion-toolbar>
-  <!-- 2.2 Banner offline fijo · 2.4 Banner de reconexión (3 s) -->
-  <app-network-status vista="banner"></app-network-status>
+  <!-- 2.2 / 2.4 Los banners offline y de reconexión están en la barra de pestañas (M3.4) -->
   <div class="acciones-prueba" aria-label="Controles de prueba">
     <ion-button
       fill="clear"
@@ -34,6 +33,15 @@
 </ion-header>
 
 <ion-content>
+  <!-- U3: deslizar hacia abajo sincroniza los pendientes -->
+  <ion-refresher slot="fixed" (ionRefresh)="refrescar($event)">
+    <ion-refresher-content
+      pullingText="Suelta para sincronizar"
+      refreshingSpinner="crescent"
+      refreshingText="Sincronizando…"
+    ></ion-refresher-content>
+  </ion-refresher>
+
   <section class="balance">
     <p class="label">Balance disponible</p>
     <p class="cifra">{{ balance$ | async | currency:'DOP':'RD$ ':'1.2-2' }}</p>
@@ -51,45 +59,51 @@
     </ion-button>
   </div>
 
+  <p class="ayuda-gestos">Toca un movimiento para editarlo · desliza a la izquierda para ver Editar/Eliminar · desliza hacia abajo para sincronizar</p>
+
+  <!-- U3 / M3.7: Editar y Eliminar en opciones deslizables; la fila queda libre para el concepto y el monto -->
   <ion-list lines="none">
-    <ion-item
-      *ngFor="let m of (lista$ | async); trackBy: trackById"
-      class="mov"
-      [class.pendiente]="m.estado === 'pendiente'"
-      [class.ingreso]="m.tipo === 'ingreso'"
-    >
-      <ion-label>
-        <h3>{{ m.concepto }}</h3>
-        <p class="fecha">{{ m.fecha | date:'d MMM · h:mm a' }}</p>
-        <p class="fecha" *ngIf="m.ubicacion">
-          Ubicación {{ m.ubicacion.simulada ? 'demo' : 'GPS' }} · {{ m.ubicacion.latitud }}, {{ m.ubicacion.longitud }}
-        </p>
-        <!-- 2.3 Etiqueta por movimiento creado sin conexión -->
-        <p class="tag-pendiente" *ngIf="m.estado === 'pendiente'">{{ etiquetaPendiente }}</p>
-      </ion-label>
-      <ion-note slot="end" class="monto">
-        {{ m.tipo === 'ingreso' ? '+' : '-' }} {{ m.monto | currency:'DOP':'RD$ ':'1.2-2' }}
-      </ion-note>
+    @for (m of (lista$ | async); track m.id) {
+      <ion-item-sliding #deslizable class="mov-deslizable">
+        <ion-item
+          class="mov"
+          button
+          detail="false"
+          [class.pendiente]="m.estado === 'pendiente'"
+          [class.ingreso]="m.tipo === 'ingreso'"
+          [routerLink]="['/tabs/inicio/movimiento', m.id]"
+          [attr.aria-label]="'Editar ' + m.concepto"
+        >
+          <ion-label>
+            <h3>{{ m.concepto }}</h3>
+            <p class="fecha">{{ m.fecha | date:'d MMM · h:mm a' }}</p>
+            @if (m.ubicacion) {
+              <p class="fecha">
+                Ubicación {{ m.ubicacion.simulada ? 'demo' : 'GPS' }} · {{ m.ubicacion.latitud }}, {{ m.ubicacion.longitud }}
+              </p>
+            }
+            <!-- 2.3 Etiqueta por movimiento creado sin conexión -->
+            @if (m.estado === 'pendiente') {
+              <p class="tag-pendiente">{{ etiquetaPendiente }}</p>
+            }
+          </ion-label>
+          <ion-note slot="end" class="monto">
+            {{ m.tipo === 'ingreso' ? '+' : '-' }} {{ m.monto | currency:'DOP':'RD$ ':'1.2-2' }}
+          </ion-note>
+        </ion-item>
 
-      <ion-button
-        slot="end"
-        fill="clear"
-        aria-label="Editar movimiento"
-        [routerLink]="['/tabs/inicio/movimiento', m.id]"
-      >
-        Editar
-      </ion-button>
-
-      <ion-button
-        slot="end"
-        fill="clear"
-        color="danger"
-        aria-label="Eliminar movimiento"
-        (click)="eliminarMovimiento(m)"
-      >
-        Eliminar
-      </ion-button>
-    </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option class="opcion-editar" (click)="editarMovimiento(m, deslizable)">
+            <ion-icon slot="top" name="create-outline"></ion-icon>
+            Editar
+          </ion-item-option>
+          <ion-item-option class="opcion-eliminar" (click)="eliminarMovimiento(m, deslizable)">
+            <ion-icon slot="top" name="trash-outline"></ion-icon>
+            Eliminar
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    }
   </ion-list>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">

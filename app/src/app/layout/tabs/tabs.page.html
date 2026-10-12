@@ -3,6 +3,13 @@
   gráfica Cyber definida en src/theme/controla.scss.
 -->
 <ion-tabs>
+  <!--
+    Banners de conectividad (offline fijo / "Conexión restablecida" 3 s) para
+    todas las pestañas, justo encima de la barra. La píldora ONLINE/OFFLINE
+    sigue en la cabecera de Inicio.
+  -->
+  <app-network-status vista="banner" class="banner-tabs"></app-network-status>
+
   <ion-tab-bar slot="bottom" class="tabs-controla">
     <ion-tab-button tab="inicio">
       <ion-icon name="home-outline"></ion-icon>

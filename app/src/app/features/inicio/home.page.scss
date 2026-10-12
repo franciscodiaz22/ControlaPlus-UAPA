@@ -137,16 +137,69 @@ ion-list {
   padding: 0;
 }
 
-ion-item.mov {
-  --background: #{$card};
-  --color: #{$hielo};
-  --border-radius: 14px;
-  --padding-start: 16px;
-  --inner-padding-end: 16px;
-  --min-height: 64px;
+/* Pull-to-refresh (U3) con los colores de la app */
+ion-refresher-content {
+  color: $cian;
+  --color: #{$cian};
+  font-family: $mono;
+  font-size: 11px;
+}
+
+/* Ayuda de gestos bajo el título de la lista */
+.ayuda-gestos {
+  margin: 0 0 12px;
+  font-family: $mono;
+  font-size: 10px;
+  line-height: 1.5;
+  color: $muted;
+}
+
+/*
+ * M3.7: cada fila es un ion-item-sliding. El borde y el radio van en el
+ * contenedor para que las opciones deslizables queden dentro de la tarjeta.
+ */
+ion-item-sliding.mov-deslizable {
   margin-bottom: 12px;
   border: 1px solid $borde;
   border-radius: 14px;
+  overflow: hidden;
+
+  &:has(ion-item.pendiente) {
+    border-color: $ambar;
+  }
+}
+
+ion-item-option {
+  font-family: $mono;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  min-width: 76px;
+
+  &.opcion-editar {
+    --background: #{$azul};
+    --color: #{$hielo};
+  }
+
+  &.opcion-eliminar {
+    --background: #{$coral};
+    --color: #{$grafito};
+  }
+
+  ion-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+}
+
+ion-item.mov {
+  --background: #{$card};
+  --background-hover: #{$card};
+  --background-activated: #{$borde};
+  --color: #{$hielo};
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 64px;
 
   h3 {
     font-family: $display;
@@ -168,8 +221,7 @@ ion-item.mov {
   }
   &.ingreso .monto { color: $cian; }
 
-  /* 2.3 Etiqueta "Pendiente de sincronizar": borde y texto ámbar, 12 px */
-  &.pendiente { border-color: $ambar; }
+  /* 2.3 Etiqueta "Pendiente de sincronizar": borde (en el contenedor) y texto ámbar, 12 px */
   .tag-pendiente {
     margin-top: 6px;
     font-family: $mono;

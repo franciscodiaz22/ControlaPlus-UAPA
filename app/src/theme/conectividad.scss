@@ -29,6 +29,23 @@ ion-toast.toast-oscuro {
   --border-color: #1e2a35;
 }
 
+/*
+ * Los toasts inferiores se muestran por encima de la barra de pestañas
+ * (56 px) y no la tapan. Se aplica a todos los toasts de la app, también a
+ * los que no usan la clase toast-controla.
+ */
+ion-toast {
+  transform: translateY(-56px);
+}
+
+/*
+ * Con el banner de conectividad visible sobre la barra (≈ 83 px), también por
+ * encima de él, con el mismo margen de 8 px que deja Ionic.
+ */
+body:has(app-network-status.banner-tabs .net-banner) ion-toast {
+  transform: translateY(-148px);
+}
+
 /* Alerta de nuevo movimiento con la misma línea gráfica */
 ion-alert.alerta-controla {
   --background: #121a22;

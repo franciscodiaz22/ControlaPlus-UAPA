@@ -1,5 +1,6 @@
 /**
- * tabs.page.ts — barra de pestañas de Controla+: Inicio y Compartir.
+ * tabs.page.ts — barra de pestañas de Controla+: Inicio, Compartir y QR.
+ * Encima de la barra muestra los banners de conectividad en todas las pestañas.
  */
 import { Component } from '@angular/core';
 import {
@@ -11,11 +12,12 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bluetoothOutline, homeOutline, qrCodeOutline } from 'ionicons/icons';
+import { NetworkStatusComponent } from '../../core/network/network-status.component';
 
 @Component({
   selector: 'app-tabs',
   standalone: true,
-  imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel],
+  imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, NetworkStatusComponent],
   templateUrl: './tabs.page.html',
 })
 export class TabsPage {

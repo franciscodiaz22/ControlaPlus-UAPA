@@ -9,9 +9,13 @@
  * CRUD (U9): el alta rápida es la alerta del botón (+); "Formulario" y
  * "Editar" abren MovimientosFormComponent; eliminar pide confirmación. Las
  * reglas de validación son las de features/movimientos/validacion.ts.
+ *
+ * Interacción (U3): tocar una fila la edita; deslizarla a la izquierda
+ * muestra Editar/Eliminar (ion-item-sliding); deslizar la lista hacia abajo
+ * sincroniza (ion-refresher → SyncService.sincronizar('manual')).
  */
 import { Component, inject, signal } from '@angular/core';
-import { AsyncPipe, CurrencyPipe, DatePipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   AlertController,
@@ -22,20 +26,28 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
   IonList,
   IonNote,
+  IonRefresher,
+  IonRefresherContent,
   IonTitle,
   IonToolbar,
+  NavController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, cloudOfflineOutline, warningOutline } from 'ionicons/icons';
+import { add, cloudOfflineOutline, createOutline, trashOutline, warningOutline } from 'ionicons/icons';
+import { firstValueFrom } from 'rxjs';
 import { Geolocation } from '@capacitor/geolocation';
 import { ToastController } from '@ionic/angular';
 import { NetworkStatusComponent } from '../../core/network/network-status.component';
 import { NetworkService } from '../../core/network/network.service';
 import { ApiService } from '../../core/offline/api.service';
 import { MovimientosService } from '../../core/offline/movimientos.service';
+import { SyncService } from '../../core/offline/sync.service';
 import { Movimiento, TipoMovimiento, UbicacionMovimiento } from '../../core/offline/movimiento.model';
 import { MENSAJES } from '../../core/offline/mensajes';
 import { validarMovimiento } from '../movimientos/validacion';
@@ -47,8 +59,6 @@ import { validarMovimiento } from '../movimientos/validacion';
     AsyncPipe,
     CurrencyPipe,
     DatePipe,
-    NgFor,
-    NgIf,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -56,8 +66,13 @@ import { validarMovimiento } from '../movimientos/validacion';
     IonButton,
     IonList,
     IonItem,
+    IonItemSliding,
+    IonItemOptions,
+    IonItemOption,
     IonLabel,
     IonNote,
+    IonRefresher,
+    IonRefresherContent,
     IonFab,
     IonFabButton,
     IonIcon,
@@ -73,6 +88,8 @@ export class HomePage {
   private readonly toastCtrl = inject(ToastController);
   private readonly network = inject(NetworkService);
   private readonly api = inject(ApiService);
+  private readonly sync = inject(SyncService);
+  private readonly navCtrl = inject(NavController);
   private ubicacionCapturada?: UbicacionMovimiento;
 
   readonly modoOfflinePrueba = signal(this.network.modoOfflineDePrueba);
@@ -85,7 +102,32 @@ export class HomePage {
   readonly etiquetaPendiente = MENSAJES.etiquetaPendiente;
 
   constructor() {
-    addIcons({ add, cloudOfflineOutline, warningOutline });
+    addIcons({ add, cloudOfflineOutline, warningOutline, createOutline, trashOutline });
+  }
+
+  /**
+   * Pull-to-refresh (U3): pide a SyncService la sincronización manual de los
+   * pendientes. No envía nada por su cuenta (contrato C4).
+   */
+  async refrescar(evento: Event): Promise<void> {
+    try {
+      if (!this.network.isOnline) {
+        await this.toast('Sin conexión: los pendientes se enviarán al reconectar.');
+        return;
+      }
+      const enviados = await this.sync.sincronizar('manual');
+      if (enviados === 0 && (await firstValueFrom(this.pendientes$)) === 0) {
+        await this.toast('Todo está sincronizado.');
+      }
+    } finally {
+      await (evento.target as HTMLIonRefresherElement).complete();
+    }
+  }
+
+  /** Opción "Editar" del deslizable: cierra la fila y abre el formulario. */
+  async editarMovimiento(movimiento: Movimiento, deslizable?: IonItemSliding): Promise<void> {
+    await deslizable?.close();
+    await this.navCtrl.navigateForward(['/tabs/inicio/movimiento', movimiento.id]);
   }
 
   alternarOfflinePrueba(): void {
@@ -167,15 +209,23 @@ export class HomePage {
   }
 
   private async toast(message: string): Promise<void> {
-    const toast = await this.toastCtrl.create({ message, duration: 3000, position: 'bottom' });
+    // Misma línea gráfica que los toasts de MovimientosService y SyncService (M3.5).
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 3000,
+      position: 'bottom',
+      cssClass: ['toast-controla', 'toast-oscuro'],
+    });
     await toast.present();
   }
+
   /**
    * Pide confirmación y, si se acepta, elimina el movimiento con el servicio
-   * (queda como eliminación pendiente hasta sincronizar). La edición se hace
-   * en el formulario (botón "Editar" de la lista).
+   * (queda como eliminación pendiente hasta sincronizar). Se llega desde la
+   * opción "Eliminar" de la fila deslizable.
    */
-  async eliminarMovimiento(movimiento: Movimiento): Promise<void> {
+  async eliminarMovimiento(movimiento: Movimiento, deslizable?: IonItemSliding): Promise<void> {
+    await deslizable?.close();
     const alerta = await this.alertCtrl.create({
       header: '¿Eliminar movimiento?',
       // subHeader se muestra como texto: el concepto puede venir de otro teléfono.
@@ -194,9 +244,5 @@ export class HomePage {
       ],
     });
     await alerta.present();
-  }
-
-  trackById(_indice: number, m: Movimiento): string {
-    return m.id;
   }
 }

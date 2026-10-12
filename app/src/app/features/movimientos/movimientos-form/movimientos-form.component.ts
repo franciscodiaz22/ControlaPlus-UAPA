@@ -128,7 +128,12 @@ export class MovimientosFormComponent implements OnInit {
   }
 
   private async toast(message: string): Promise<void> {
-    const toast = await this.toastCtrl.create({ message, duration: 2500, position: 'bottom' });
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2500,
+      position: 'bottom',
+      cssClass: ['toast-controla', 'toast-cian'],
+    });
     await toast.present();
   }
 }
