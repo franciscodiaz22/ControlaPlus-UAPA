@@ -1,0 +1,219 @@
+/* Línea gráfica Cyber de Controla+ (mismos valores que Inicio y QR) */
+$grafito: #0a0f14;
+$hielo: #e8f6f5;
+$cian: #22e0d6;
+$azul: #4c7bff;
+$card: #121a22;
+$borde: #1e2a35;
+$coral: #ff5a6e;
+$muted: #7c8b99;
+$mono: 'Martian Mono', ui-monospace, Menlo, monospace;
+$display: 'Unbounded', 'Avenir Next', system-ui, sans-serif;
+
+ion-toolbar {
+  --background: #{$grafito};
+  --color: #{$hielo};
+  --border-color: #{$borde};
+  --border-width: 0 0 1px 0;
+  --border-style: solid;
+}
+
+ion-title {
+  font-family: $display;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  font-size: 22px;
+}
+
+ion-content {
+  --background: #{$grafito};
+  --color: #{$hielo};
+}
+
+.multimedia {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: $cian;
+  font-family: $mono;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin: 0 0 20px;
+  font-family: $display;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+
+  .mas {
+    color: $cian;
+  }
+}
+
+.tarjeta {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid $borde;
+  border-radius: 14px;
+  background: $card;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  > ion-icon {
+    flex: none;
+    font-size: 28px;
+    color: $cian;
+  }
+
+  h2 {
+    margin: 0;
+    font-family: $display;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  .sub {
+    margin: 2px 0 0;
+    color: $muted;
+    font-family: $mono;
+    font-size: 11px;
+  }
+}
+
+audio {
+  display: none;
+}
+
+.pantalla {
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1px solid $borde;
+  border-radius: 12px;
+  background: #000;
+
+  video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+ion-button.play {
+  --background: #{$cian};
+  --color: #{$grafito};
+  --box-shadow: none;
+  width: 52px;
+  height: 52px;
+  margin: 0;
+}
+
+.tiempo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: $mono;
+
+  .estado {
+    color: $muted;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+
+    &.activo {
+      color: $cian;
+    }
+  }
+
+  .reloj {
+    color: $hielo;
+    font-size: 16px;
+    font-weight: 700;
+  }
+}
+
+ion-range {
+  --bar-background: #{$borde};
+  --bar-background-active: #{$cian};
+  --knob-background: #{$cian};
+  --bar-height: 4px;
+  padding: 0;
+}
+
+.progreso {
+  margin-top: 4px;
+}
+
+.volumen {
+  ion-button {
+    --color: #{$hielo};
+    margin: 0;
+  }
+
+  .rango-volumen {
+    flex: 1;
+    --bar-background-active: #{$azul};
+    --knob-background: #{$azul};
+
+    &.silenciado {
+      opacity: 0.4;
+    }
+  }
+
+  .valor {
+    min-width: 62px;
+    color: $muted;
+    font-family: $mono;
+    font-size: 11px;
+    text-align: right;
+  }
+}
+
+.extras {
+  flex-wrap: wrap;
+  margin-top: 8px;
+
+  ion-button {
+    --color: #{$cian};
+    --border-color: #{$cian};
+    margin: 0;
+    font-family: $mono;
+    font-size: 11px;
+    text-transform: none;
+  }
+}
+
+.error {
+  margin: 8px 0 0;
+  color: $coral;
+  font-size: 13px;
+}
+
+.nota,
+.credito {
+  margin: 8px 0 0;
+  color: $muted;
+  font-size: 12px;
+}
+
+.credito {
+  text-align: center;
+}

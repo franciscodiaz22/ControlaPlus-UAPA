@@ -5,6 +5,8 @@
  * Las pantallas cuelgan de TabsPage (barra de pestañas):
  *   /tabs/inicio     → Home de modo_offline (balance y movimientos)
  *   /tabs/compartir  → Compartir Cerca (BLE)
+ *   /tabs/qr         → Escáner QR
+ *   /tabs/multimedia → Audio y video locales (U7)
  *   /tabs/inicio/movimiento/nuevo → formulario de alta (CRUD, U9)
  *   /tabs/inicio/movimiento/:id   → formulario de edición (CRUD, U9)
  * Se deja además el alias /compartir para abrirla directamente, y /nuevo
@@ -38,6 +40,12 @@ export const routes: Routes = [
         path: 'qr',
         loadComponent: () =>
           import('./features/qr/qr.page').then((m) => m.QrPage),
+      },
+
+      {
+        path: 'multimedia',
+        loadComponent: () =>
+          import('./features/multimedia/multimedia.page').then((m) => m.MultimediaPage),
       },
 
       // Formulario de movimientos dentro de la pestaña Inicio (alta / edición).

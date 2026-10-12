@@ -67,12 +67,12 @@ El último registro de la Parte II es la Fase 4.0 (2026-10-01). Lo siguiente se 
 
 | Unidad | Tema | Responsable original | Estado real | Qué falta | Fase |
 |---|---|---|---|---|---|
-| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[x]` Tabs Inicio/Compartir/QR con `loadComponent` (lazy); rutas revisadas en M3; indicador de red en todas las pestañas (M3.4) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); ~~indicador de red solo en Inicio~~ (resuelto en M3.4); revisar las rutas cuando lleguen Multimedia (M4) y el Mapa del compañero responsable de U6 (M7) | M2 `[x]`, M3 `[x]`, M4, M7 |
+| U1–U2 | Navegación Ionic/Angular, tabs, rutas, páginas, lazy loading | Francisco (interfaz) / José (rutas compartidas) | `[x]` Tabs Inicio/Compartir/QR/Media con `loadComponent` (lazy); rutas revisadas en M3; indicador de red en todas las pestañas (M3.4) | ~~`/nuevo` eager, fuera de las tabs y sin enlace~~ (resuelto en M2: formulario lazy en `/tabs/inicio/movimiento/*`); ~~indicador de red solo en Inicio~~ (resuelto en M3.4); ~~rutas de Multimedia~~ (M4: `/tabs/multimedia`, pestaña "Media"); revisar las rutas cuando llegue el Mapa del compañero responsable de U6 (M7) | M2 `[x]`, M3 `[x]`, M4 `[x]`, M7 |
 | U3 | Componentes, interacciones y gestos | Francisco | `[x]` · Android pendiente. Filas deslizables (`ion-item-sliding`) con Editar/Eliminar, pull-to-refresh (`ion-refresher`) que sincroniza y toque en la fila para editar | Pruebas táctiles en Android (A11, A15) y evidencias (M9). Gesto personalizado solo si D1 lo exige | M3 `[x]`, M8, M9 |
 | U4 | Conectividad | José | `[x]` · **validado en Android** (emulador, Android 17 / API 37, 2026-10-12: A1–A5 OK; ver «M8 — bloque U4 adelantado») | Pendientes reales: repetir en un teléfono físico; ejecutar uno por uno los casos 1–6 de 3.2; backend real en U10 (M6) | M8 (bloque U4) `[x]` |
 | U5 | Bluetooth / NFC | José (Compartir Cerca, PR #1) | `[~]` BLE implementado; BLE → pendientes → sincronización `[x]` en navegador (3.5) | `[!]` Prueba real entre dos teléfonos Android. NFC no se implementa si la consigna admite BLE como alternativa (D1) | M8 |
 | U6 | GPS + mapa interactivo + ubicación del usuario + marcadores | Félix (asignación original). **Responsable actual: el compañero que la está desarrollando; no la implementa José** | `[!]` **En desarrollo por el compañero**, fuera de esta rama. En esta rama solo existe la captura GPS parcial que integró Ángel (`acae169`, `home.page.ts`) y el campo opcional `Movimiento.ubicacion` | Lo desarrolla el compañero: servicio GPS, permisos Android (hoy **faltan** `ACCESS_*_LOCATION`), mapa, marcadores, popup, posición actual. José solo integra su PR (M7) y lo incluye en las pruebas Android (M8) | Compañero · integración en M7 |
-| U7 | Audio y video | Francisco | `[ ]` | Todo el módulo | M4 |
+| U7 | Audio y video | Francisco (implementado por José en M4 con autorización; Francisco no trabajaba en el módulo) | `[x]` Pantalla "Media" con audio (guía narrada) y video (tutorial) locales y controles propios; validado en Chrome y en el emulador Android (2026-10-12) | Teléfono físico y evidencias (M9) | M4 `[x]` |
 | U8 | Cámara / QR | Ángel | `[~]` QR funcional con ML Kit (Android) y modo web simulado; `@capacitor/camera` sin uso | Decidir si hace falta foto (D3); pruebas; capturas reales | M5 |
 | U9 | Storage + CRUD | Kilsy | `[x]` · Android pendiente. CRUD funcional y persistente, sincronización CRUD (versionado, tombstones) y, desde M2, validación compartida, formulario de alta/edición, edición del tipo y confirmación al eliminar | Pruebas Android (A7) y documento de requisitos (M10) | M2 `[x]`, M8, M10 |
 | U10 | REST API GET + POST | Ángel | `[~]` GET (`/qr/consultar`) y POST (`/movimientos/lote`) en código, **solo simulados** (`usarServidorSimulado: true`, dominio `.example`) | Servidor real verificable (D4), tests de `ApiService`, evidencias | M6 |
@@ -103,7 +103,7 @@ Lo ya validado no se rompe. Cualquier cambio en estos puntos se justifica en la 
 | C6 | `ApiService` | Único punto de salida HTTP. Contrato de `/movimientos/lote` documentado en el código. El modo simulado siempre se identifica como simulación. |
 | C7 | Bluetooth (`core/compartir/**`, `features/compartir/**`) | No se modifica salvo un defecto demostrado. Flujo protegido: aceptar → guardado `pendiente` → sincronización. |
 | C8 | Datos pesados | Fotos, audio o video **no entran** en la cola de sincronización ni en el `POST` sin una decisión explícita (D3). |
-| C9 | Regresión obligatoria | En cada fase: todas las pruebas del repositorio (20 al empezar el plan maestro; 37 tras M2) más las nuevas en verde, `ng build` OK y `git diff --check` limpio. Sin errores de lint **nuevos** en los archivos tocados. |
+| C9 | Regresión obligatoria | En cada fase: todas las pruebas del repositorio (20 al empezar el plan maestro; 37 tras M2; 43 tras M3; 69 tras M4) más las nuevas en verde, `ng build` OK y `git diff --check` limpio. Sin errores de lint **nuevos** en los archivos tocados. |
 | C10 | Archivos compartidos | `app.routes.ts`, `app.component.ts`, `main.ts`, `environments/*`, `package.json`, `angular.json`, `AndroidManifest.xml`: se tocan solo en la fase que lo necesita y quedan listados en su resultado. Los paquetes se instalan solo con autorización explícita. |
 
 ## I.6 Ciclo obligatorio por fase
@@ -294,12 +294,12 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 - **A11:** gestos táctiles reales en el WebView.
 - **A15:** WebView con soporte de `:has()` (Android WebView 105 o posterior) y posición de los toasts sobre la barra y el banner. Las alturas usadas (56 px de barra y unos 83 px de banner) se comprueban en el dispositivo.
 
-### M4 — U7 multimedia (audio y video) `[ ]`
+### M4 — U7 multimedia (audio y video) `[x]` (Chrome y emulador Android)
 
 - **Objetivo:** pantalla multimedia con audio y video locales y controles propios.
 - **Requisitos:** U7.
 - **Tareas:**
-  - M4.1 Elegir archivos cortos y ligeros, con licencia libre citable (APA 7), en `src/assets/media/`.
+  - M4.1 Elegir archivos cortos y ligeros, con licencia libre citable (APA 7), en `src/assets/media/`. *(Hecho con contenido original del equipo, sin material de terceros; ver «Resultado de M4» y `assets/media/LEEME.md`.)*
   - M4.2 `MultimediaPage` (`features/multimedia/`) con `<audio>` y `<video>` controlados desde TypeScript: play, pausa, volumen, barra de progreso y tiempo.
   - M4.3 Ruta lazy y acceso desde la UI (pestaña o enlace, según quepa en la barra).
   - M4.4 Estilo coherente con Controla+ y accesibilidad (etiquetas, `aria-*`).
@@ -311,6 +311,77 @@ Sin cambios en `core/*`, BLE, U6 ni `package.json`/`package-lock.json`.
 - **Pruebas:** componente (estado reproducir/pausa, volumen, progreso), manual en Chrome; Android → I.10.
 - **Evidencias:** reproductor de audio y de video en uso con sus controles.
 - **Condición de completada:** controles funcionando con archivos locales, licencias anotadas, pruebas y build en verde; commit y push.
+
+#### Resultado de M4 (2026-10-12)
+
+El usuario confirmó que Francisco (responsable original de U7) no estaba trabajando en el módulo, así que se implementó en esta fase.
+
+**Implementación** (HTML5 + Ionic + Angular, **sin dependencias nuevas**):
+
+- **`features/multimedia/reproductor.ts`:** clase `ReproductorMedia`. Envuelve un `<audio>`/`<video>` y expone su estado como signals:
+  - estado (cargando, listo, reproduciendo, en pausa, terminado, error), tiempo actual, duración, volumen, silencio y error;
+  - el estado se actualiza con los eventos del propio elemento;
+  - métodos: reproducir/pausar, salto con la barra, volumen, silencio y reinicio;
+  - mensajes de error según `MediaError` y según el rechazo de `play()`;
+  - `formatearTiempo()`.
+- **`features/multimedia/multimedia.page.*`:** página "Multimedia" con dos tarjetas, la guía en audio y el tutorial en video. Controles propios de Ionic compartidos por ambas:
+  - reproducir/pausar, barra de progreso con salto, "actual / duración", volumen y silencio;
+  - en el video además: reiniciar, tocar el video para reproducir/pausar y pantalla completa (si el WebView no la permite, solo avisa).
+
+  Reglas:
+  - sin autoplay;
+  - iniciar un medio pausa el otro;
+  - al salir de la pantalla se pausa todo;
+  - mensaje visible si un archivo no carga;
+  - el control de volumen ignora los eventos que no cambian el volumen (corrección encontrada en la prueba de Chrome, ver abajo).
+- **Navegación:** ruta lazy `/tabs/multimedia` y cuarta pestaña **"Media"** (icono `play-circle-outline`).
+- **Contenido original** en `src/assets/media/` (unos 2,5 MB en total; descrito en `LEEME.md`):
+
+  | Archivo | Contenido | Formato |
+  |---|---|---|
+  | `guia-controla.wav` | Guía narrada de uso de la app, 44,4 s | WAV 16 kHz mono |
+  | `tutorial-controla.webm` | Tutorial "Cómo registrar un gasto", 35,1 s | WebM VP8 + Opus, 854 × 480 |
+
+  Las narraciones se escribieron para la app y se generaron con la voz *Microsoft Helena* del sintetizador de Windows. El video combina capturas reales de Controla+ y se grabó en Chrome con `canvas` + `MediaRecorder`. Después se le añadió la duración (elemento `Duration` del WebM) con un script propio fuera del repositorio, porque `MediaRecorder` no la escribe. No hay material de terceros.
+
+**Archivos:**
+- Nuevos: `features/multimedia/reproductor.ts` (+ spec), `multimedia.page.ts`/`.html`/`.scss` (+ spec), `assets/media/guia-controla.wav`, `tutorial-controla.webm` y `LEEME.md`.
+- Modificados: `app.routes.ts`, `layout/tabs/tabs.page.html` y `.ts`.
+- Sin cambios: `core/*`, BLE, Inicio, CRUD, sincronización, U6, `AndroidManifest.xml` y `package.json`/`package-lock.json`.
+
+**Pruebas:**
+- **Unitarias:** **69/69**.
+  - `reproductor.spec.ts`: 17 casos (formato del tiempo, estados, reproducir/pausar, progreso y arrastre, salto limitado, volumen, silencio, reinicio, errores de carga y de `play()`, desvincular).
+  - `multimedia.page.spec.ts`: 9 casos (archivos locales sin autoplay, botón reproducir/pausar, exclusividad, pausa al salir, mensaje de error, reinicio, aviso de pantalla completa, volumen y silencio, el silencio no borra el volumen).
+  - jsdom no reproduce medios: se simulan `play()`/`pause()`; la reproducción real se validó en Chrome y Android.
+- **Build:** OK, sin avisos. La página va en su propio chunk lazy (unos 4 kB comprimido).
+- **Lint:** sin errores en los archivos tocados.
+- **`git diff --check`:** limpio.
+- **Chrome** (escritorio, viewport móvil de 412 px, clics reales): **22/22**. Pestaña Media; carga de los dos archivos con su duración; audio (reproducir, pausar, volumen, silencio conservando el volumen, salto, tiempo); video (lo mismo, más reiniciar, tocar el video y pantalla completa); exclusividad; salir pausa todo; navegación existente; sin errores de consola.
+- **Android** (mismo emulador que en M8: `Pixel_6`, `sdk_gphone16k_x86_64`, Android 17 / API 37; build + `cap sync` + `assembleDebug` + `adb install -r` sobre la app ya instalada; toques reales por el WebView depurable): **22/22**.
+  - La app inicia y la pantalla Multimedia carga los dos archivos con su duración (44,37 s y 35,05 s).
+  - Audio: reproducir, pausar, volumen, silenciar y quitar silencio conservando el volumen, salto y tiempo.
+  - Video: imagen decodificada (854 px), reproducir, pausar, volumen, silencio, salto, tiempo, reiniciar y pantalla completa nativa del WebView.
+  - Exclusividad y pausa al salir.
+  - La navegación y la pantalla Inicio siguen funcionando.
+  - Logcat sin errores de la app.
+  - Capturas de comprobación tomadas con `adb screencap` fuera del repositorio; no sustituyen a las evidencias de M9.
+
+**Problemas encontrados y solución:**
+1. **Silenciar ponía el volumen a 0** (detectado en Chrome). La plantilla forzaba el valor del control de volumen a 0 en silencio, el control emitía `ionInput` y se perdía el volumen. Ahora el control siempre muestra el volumen real, el silencio se indica con el icono y el texto, y la página ignora los eventos que no cambian el volumen. Hay una prueba unitaria y una comprobación en Chrome y Android.
+2. **`cap sync`** volvió a reescribir los dos archivos Gradle solo con otro final de línea; se restauraron (igual que en M8).
+
+**Resumen para el documento técnico:**
+- **Responsable:** Francisco José Díaz Abreu (módulo Multimedia según la distribución del proyecto); implementado durante esta fase por José Daniel Marte con autorización del equipo.
+- **Problema:** la aplicación necesita demostrar la integración y reproducción de contenido multimedia local.
+- **Solución:** reproductores locales de audio y video con HTML5 e Ionic y controles propios.
+- **Tecnologías:** Ionic, Angular, HTML5 Audio y HTML5 Video.
+- **Funcionalidades:** reproducción, pausa, progreso, duración, volumen, silencio, reinicio del video, exclusividad entre audio y video, manejo de errores y reproducción local, sin conexión y sin autoplay.
+
+**Pendientes reales:**
+- teléfono físico (solo se probó en el emulador);
+- evidencias definitivas para el informe (M9);
+- si se quisiera iOS/Safari, añadir una versión MP4 (H.264/AAC) del video.
 
 ### M5 — U8 cámara / QR `[ ]`
 
@@ -529,7 +600,7 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 | A9 | GPS: diálogo de permiso, permiso denegado, captura real | U6 (compañero) | `[!]` Las define y valida el responsable de U6; José las incluye en M8 si U6 está integrada |
 | A10 | Mapa: mapas base cargados, marcadores, popup, "Mi ubicación", aviso sin red | U6 (compañero) | `[!]` Ídem A9 |
 | A11 | Gestos táctiles reales (deslizar la fila → Editar/Eliminar, tocar la fila, pull-to-refresh con y sin red) | M3 | `[!]` |
-| A12 | Audio y video locales en el WebView de Android | M4 | `[!]` |
+| A12 | Audio y video locales en el WebView de Android | M4 | `[x]` OK en el emulador `Pixel_6` (Android 17 / API 37), 2026-10-12: carga, reproducción, controles, exclusividad, pausa al salir y pantalla completa (22/22, ver «Resultado de M4»). Pendiente: teléfono físico |
 | A13 | Cámara: permiso, captura, vista previa (si D3 lo incluye) | M5 | `[!]` |
 | A14 | API desde el teléfono: GET y POST contra el servidor de M6; sync de lote real | M6 | `[!]` |
 | A15 | WebView: soporte de `:has()` (Android WebView 105 o posterior); toasts por encima de la barra y del banner offline; banner de conectividad sobre la barra en todas las pestañas | M3 | `[!]` |
@@ -540,11 +611,11 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 |---|---|---|---|---|
 | DOC-1 | Documento técnico general | Arquitectura (core/features/layout), contratos de I.5, flujos (offline-first, sync, CRUD con versionado/tombstones, BLE, QR/API, multimedia y la integración de GPS/mapa tal como la entregue su responsable), cómo compilar y probar | M10 | `[ ]` |
 | DOC-2 | Documento del módulo de conectividad/offline | Antigua 6.1: servicios, cola de escrituras, disparadores de sync, reintentos, pruebas | M10 | `[ ]` |
-| DOC-3 | Documentos por módulo | Multimedia, CRUD y requisitos (coordinado con Kilsy), interfaz/gestos. El documento de GPS/mapa (U6) lo redacta su responsable; José solo lo enlaza; actualizar `Modulo_Camara_API_REST.md` (Ángel) con la API real | M10 | `[ ]` |
+| DOC-3 | Documentos por módulo | Multimedia (partir del «Resultado de M4» y de `assets/media/LEEME.md`), CRUD y requisitos (coordinado con Kilsy), interfaz/gestos. El documento de GPS/mapa (U6) lo redacta su responsable; José solo lo enlaza; actualizar `Modulo_Camara_API_REST.md` (Ángel) con la API real | M10 | `[ ]` |
 | DOC-4 | Diagramas | Actualizar `documentacion/diagramas/*.mmd` (antigua 6.3): arranque, pendientes nuevos, CRUD sincronizado, arquitectura con los módulos nuevos | M10 | `[ ]` |
 | DOC-5 | README raíz | Hoy dice "Autor: Francisco Díaz" y describe solo la AP4. Pasará a: descripción de Controla+, equipo y responsabilidades (I.4), módulos U1–U10, instalación, ejecución web/Android, servidor de pruebas, pruebas automatizadas, estructura de carpetas | M10 | `[ ]` |
 | DOC-6 | Evidencias | `docs/evidencias/` con índice por unidad (M9); solo evidencias reales | M9 | `[!]` |
-| DOC-7 | Referencias APA 7 | Documentación oficial usada (Ionic, Angular, Capacitor y cada plugin, ML Kit, Ionic Storage, Vitest; las referencias de GPS/mapa las aporta el responsable de U6) y licencias de los archivos multimedia. Cada referencia se verifica al citarla (autor, año, título, URL) | M10 | `[ ]` |
+| DOC-7 | Referencias APA 7 | Documentación oficial usada (Ionic, Angular, Capacitor y cada plugin, ML Kit, Ionic Storage, Vitest; las referencias de GPS/mapa las aporta el responsable de U6) y origen de los archivos multimedia (originales del equipo, ver `assets/media/LEEME.md`; sin material de terceros). Cada referencia se verifica al citarla (autor, año, título, URL) | M10 | `[ ]` |
 | DOC-8 | Anexos | Este plan, el checklist de pruebas Android con resultados (M8), el contrato de la API (`/movimientos/lote`, `/qr/consultar`), el listado de pruebas automatizadas y el registro de cambios | M10 | `[ ]` |
 | DOC-9 | Defensa individual | Guion por integrante con su módulo original (I.4), qué hace, cómo se probó y su evidencia. Para José: arquitectura offline-first, cola de escrituras, sync con reintentos, anti-duplicados, CRUD con versionado/tombstones, integración BLE, e integración y finalización del proyecto (sin U6, que defiende su responsable). Incluir posibles preguntas y la demo en vivo (orden de pantallas) | M10 | `[ ]` |
 | DOC-10 | `equipo/*.md` | Actualizar el estado final de cada integrante sin borrar su responsabilidad original | M10 | `[ ]` |
@@ -557,11 +628,12 @@ A1–A5 (U4) se validaron el 2026-10-12 en el emulador `Pixel_6` (Android 17 / A
 - M2 `[x]` · Android pendiente (2026-10-12): CRUD con validación compartida, formulario de alta y edición, y confirmación al eliminar. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio y 17/17 comprobaciones en Chrome (ver «Resultado de M2»).
 - M3 `[x]` · Android pendiente (2026-10-12): filas deslizables, pull-to-refresh, indicador de red en todas las pestañas, toasts coherentes y filas móviles resueltas. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio y 21/21 comprobaciones en Chrome (ver «Resultado de M3»). Pruebas Android y WebView → M8 (A11, A15). El commit lo hace el usuario.
 - **M8 — bloque U4 adelantado** `[x]` (2026-10-12): U4 validado en el emulador Android 17 / API 37 (A1–A5 OK, sin cambios de código). Ver «M8 — bloque U4 adelantado». El resto de M8 sigue pendiente.
-- M4–M7 y M9–M12: sin empezar. M8: solo el bloque U4.
+- **M4 — U7 multimedia** `[x]` (2026-10-12): pestaña "Media" con audio y video locales originales y controles propios. 69/69 pruebas, build OK, lint sin errores, `git diff --check` limpio, 22/22 en Chrome y 22/22 en el emulador Android (ver «Resultado de M4»). Pendiente: teléfono físico y evidencias (M9). El commit lo hace el usuario.
+- M5–M7 y M9–M12: sin empezar. M8: solo el bloque U4.
 
-**Siguiente fase propuesta:** **M4 — U7 multimedia (audio y video)**.
+**Siguiente fase propuesta:** **M5 — U8 cámara / QR** (requiere la decisión D3).
 
-**Esperando autorización del usuario.** No se inicia M4 automáticamente.
+**Esperando autorización del usuario.** No se inicia M5 automáticamente.
 
 ---
 
@@ -1378,6 +1450,7 @@ Se modifican solo si es necesario, **avisando antes** y explicando el motivo.
 | 2026-10-12 | M2 | CRUD (U9): `validarMovimiento()` compartida; Inicio con validación en el alta rápida, confirmación al eliminar y acceso al formulario; formulario de Kilsy convertido en página Ionic de alta y edición (lazy en `/tabs/inicio/movimiento/*`, conserva la ubicación); retirado `MovimientosListaComponent`. 37/37 pruebas, build OK, lint sin errores nuevos, `git diff --check` limpio, 17/17 en Chrome. Pendiente M3.7 (filas apretadas en móvil) | `app.routes.ts`, `features/inicio/home.page.*` (+ spec nuevo), `features/movimientos/validacion.ts` (+ spec), `features/movimientos/movimientos-form/*`, `features/movimientos/movimientos-lista/*` (eliminado), `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-12 | M3 | U1–U3: rutas revisadas sin cambios; filas de Inicio con `ion-item-sliding` (Editar/Eliminar) y toque para editar (resuelve M3.7); pull-to-refresh → `SyncService.sincronizar('manual')`; banners de conectividad en la barra de pestañas (todas las pestañas); toasts con estilo común y por encima de la barra y del banner. 43/43 pruebas, build OK, lint sin errores, `git diff --check` limpio, 21/21 en Chrome. M3.6 no necesario (depende de D1). Android/WebView → M8 (A11, A15). Commit a cargo del usuario | `features/inicio/home.page.*` (+ spec), `layout/tabs/*`, `theme/conectividad.scss`, `features/movimientos/movimientos-form/movimientos-form.component.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
 | 2026-10-12 | M8 (bloque U4 adelantado) | Validación de U4 en Android sin cambios de código: emulador `Pixel_6` (`sdk_gphone16k_x86_64`, Android 17 / API 37), APK debug (build + `cap sync` + `assembleDebug`). A1–A5 OK (casos A–O): offline, persistencia tras cierre forzado y reinicio, reconexión con un solo envío, sin duplicados, reintentos 6 → 24 → 48 s con API simulada, segundo plano, permisos `INTERNET` y `ACCESS_NETWORK_STATE`. `cap sync` solo cambió finales de línea en 2 archivos Gradle (restaurados). No probado: teléfono físico, casos 1–6 de 3.2 uno por uno, backend real | `docs/PLAN_JOSE_INTEGRACION.md` |
+| 2026-10-12 | M4 | U7 Multimedia: `ReproductorMedia` + `MultimediaPage` (audio y video HTML5 con controles propios de Ionic, sin autoplay, exclusividad, pausa al salir, errores visibles, pantalla completa opcional); ruta lazy `/tabs/multimedia` y pestaña "Media"; contenido original en `assets/media` (guía WAV de 44,4 s y tutorial WebM de 35,1 s con capturas reales y narración TTS; `LEEME.md`). Corregido en la prueba: silenciar borraba el volumen. 69/69 pruebas, build OK, lint sin errores, `git diff --check` limpio, 22/22 en Chrome, 22/22 en el emulador Android (A12). Sin dependencias nuevas | `features/multimedia/*` (nuevo), `assets/media/*` (nuevo), `app.routes.ts`, `layout/tabs/tabs.page.html`, `.ts`, `docs/PLAN_JOSE_INTEGRACION.md` |
 
 ---
 

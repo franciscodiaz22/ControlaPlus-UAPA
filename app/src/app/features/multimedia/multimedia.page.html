@@ -1,0 +1,123 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Multimedia</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <main class="multimedia">
+    <p class="eyebrow">GUÍAS · CONTENIDO LOCAL</p>
+    <h1>Aprende a utilizar Controla<span class="mas">+</span></h1>
+
+    <!-- Controles comunes de audio y video -->
+    <ng-template #controles let-r let-titulo="titulo">
+      <div class="controles" [attr.aria-label]="'Controles de ' + titulo">
+        <div class="fila">
+          <ion-button
+            class="play"
+            shape="round"
+            (click)="r.alternar()"
+            [disabled]="r.estado() === 'error'"
+            [attr.aria-label]="(r.reproduciendo() ? 'Pausar ' : 'Reproducir ') + titulo"
+          >
+            <ion-icon slot="icon-only" [name]="r.reproduciendo() ? 'pause' : 'play'"></ion-icon>
+          </ion-button>
+          <div class="tiempo">
+            <span class="estado" [class.activo]="r.reproduciendo()" role="status">{{ r.textoEstado() }}</span>
+            <span class="reloj">{{ r.textoTiempo() }}</span>
+          </div>
+        </div>
+
+        <ion-range
+          class="progreso"
+          [min]="0"
+          [max]="r.duracion() || 1"
+          [step]="0.1"
+          [value]="r.actual()"
+          [disabled]="r.estado() === 'error' || !r.duracion()"
+          (ionKnobMoveStart)="r.empezarArrastre()"
+          (ionChange)="buscar(r, $event)"
+          [attr.aria-label]="'Progreso de ' + titulo"
+        ></ion-range>
+
+        <div class="fila volumen">
+          <ion-button
+            fill="clear"
+            size="small"
+            (click)="r.alternarSilencio()"
+            [attr.aria-label]="(r.silenciado() ? 'Quitar silencio de ' : 'Silenciar ') + titulo"
+            [attr.aria-pressed]="r.silenciado()"
+          >
+            <ion-icon slot="icon-only" [name]="r.silenciado() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+          </ion-button>
+          <!-- Siempre el volumen real: el silencio se indica con el icono y el texto
+               (forzar 0 aquí haría que el control emitiera ionInput y borrara el volumen). -->
+          <ion-range
+            class="rango-volumen"
+            [class.silenciado]="r.silenciado()"
+            [min]="0"
+            [max]="100"
+            [value]="r.volumen() * 100"
+            (ionInput)="cambiarVolumen(r, $event)"
+            [attr.aria-label]="'Volumen de ' + titulo"
+          ></ion-range>
+          <span class="valor">{{ r.silenciado() ? 'Silencio' : (r.volumen() * 100 | number: '1.0-0') + '%' }}</span>
+        </div>
+
+        @if (r.error(); as error) {
+          <p class="error" role="alert">{{ error }}</p>
+        }
+      </div>
+    </ng-template>
+
+    <!-- AUDIO -->
+    <section class="tarjeta" aria-labelledby="titulo-audio">
+      <div class="cabecera">
+        <ion-icon name="headset-outline" aria-hidden="true"></ion-icon>
+        <div>
+          <h2 id="titulo-audio">Guía de Controla+</h2>
+          <p class="sub">Audio · narración de uso de la app</p>
+        </div>
+      </div>
+      <audio #elAudio [src]="rutaAudio" preload="metadata"></audio>
+      <ng-container *ngTemplateOutlet="controles; context: { $implicit: audio, titulo: 'la guía de audio' }"></ng-container>
+    </section>
+
+    <!-- VIDEO -->
+    <section class="tarjeta" aria-labelledby="titulo-video">
+      <div class="cabecera">
+        <ion-icon name="film-outline" aria-hidden="true"></ion-icon>
+        <div>
+          <h2 id="titulo-video">Tutorial de Controla+</h2>
+          <p class="sub">Video · cómo registrar un gasto</p>
+        </div>
+      </div>
+      <div class="pantalla">
+        <video
+          #elVideo
+          [src]="rutaVideo"
+          preload="metadata"
+          playsinline
+          (click)="video.alternar()"
+          aria-label="Video tutorial de Controla+"
+        ></video>
+      </div>
+      <ng-container *ngTemplateOutlet="controles; context: { $implicit: video, titulo: 'el tutorial en video' }"></ng-container>
+      <div class="fila extras">
+        <ion-button fill="outline" size="small" (click)="video.reiniciar()" [disabled]="video.estado() === 'error'">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          Reiniciar
+        </ion-button>
+        <ion-button fill="outline" size="small" (click)="pantallaCompleta()" [disabled]="video.estado() === 'error'">
+          <ion-icon slot="start" name="expand-outline"></ion-icon>
+          Pantalla completa
+        </ion-button>
+      </div>
+      @if (avisoPantalla(); as aviso) {
+        <p class="nota" role="status">{{ aviso }}</p>
+      }
+    </section>
+
+    <p class="credito">Contenido original preparado para Controla+ (ver assets/media/LEEME.md).</p>
+  </main>
+</ion-content>
