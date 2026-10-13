@@ -312,6 +312,16 @@ export class CompartirPage implements OnDestroy {
     await t.present();
   }
 
+  /**
+   * Al cambiar de pestaña Ionic no destruye la página (ngOnDestroy no se
+   * ejecuta): se vuelve al menú para dejar de anunciarse y cerrar la conexión.
+   */
+  ionViewWillLeave(): void {
+    if (this.modo() !== 'menu') {
+      void this.volverAlMenu();
+    }
+  }
+
   /** Deja de anunciarse y cierra la conexión al salir de la pantalla. */
   ngOnDestroy(): void {
     this.errores.unsubscribe();
