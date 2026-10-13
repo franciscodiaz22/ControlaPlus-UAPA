@@ -194,7 +194,7 @@ export class MapaUbicacionComponent implements AfterViewInit, OnDestroy {
     const alerta = await this.alertCtrl.create({
       header: 'Agregar marcador',
       message:
-        'Escribe un nombre o una descripción para este punto. Con un monto puedes guardarlo como movimiento en esta ubicación.',
+        'Escribe un nombre o una descripción para este punto. «Solo marcador» es temporal: no se guarda y se pierde al cerrar la app. Con un monto puedes guardarlo como movimiento (gasto o ingreso) en esta ubicación.',
       inputs: [
         { name: 'nombre', type: 'text', placeholder: 'Nombre o descripción' },
         { name: 'monto', type: 'number', placeholder: 'Monto en RD$ (opcional)', min: 1 },
