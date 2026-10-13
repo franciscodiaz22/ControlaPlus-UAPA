@@ -123,3 +123,33 @@ La colaboración se realizará principalmente durante la integración final:
 Cada integrante debe continuar trabajando principalmente en su propia rama y utilizar Pull Requests para la integración.
 
 **Importante:** no realizar cambios directamente sobre `feature/jose-integracion` sin coordinación.
+
+---
+
+## Estado final (actualizado el 2026-10-12)
+
+**Notas:**
+
+- El registro anterior se conserva tal como se escribió el 2026-09-30.
+- El commit `9b550c3` citado arriba corresponde a `4c295f4` en la rama actual (el historial se reescribió después).
+- El código base de conectividad y modo offline proviene de la AP4 de Francisco (`4d37c82`); el aporte de José fue integrarlo en `app/` y ampliarlo.
+
+### Aporte realizado
+
+- **Compartir Cerca (U5):** módulo Bluetooth LE e integración inicial de la aplicación `app/` (`976b311`, PR #1). Corrección para que el receptor deje de anunciarse al salir de la pantalla (`4edc1b0`).
+- **Conectividad, offline y sincronización (U4):** Fases 1–4 (`4c295f4`) y corrección de una carrera de sincronización (`8d9ac95`). Validado en el emulador Android (M8, bloque U4, `03d76f0`).
+- **Interfaz y multimedia**, en el área asignada a Francisco, con autorización del equipo: navegación e interacciones (M3, `4bb638e`) y pantalla Media de audio y video (M4, `da3c719`).
+- **Plan maestro** (`docs/PLAN_JOSE_INTEGRACION.md`) y README del proyecto final.
+
+### Integración final y complementación de módulos de otros integrantes
+
+- **CRUD de Kilsy:** sincronización del CRUD (`6577d8f`) y pulido con validación y formulario (M2, `1f80c12`).
+- **Cámara/QR y API de Ángel:** manejo de errores y lectura QR desde foto (M5, `bbab905`, `5991351`), API REST real con el servidor propio `server/` (M6, `0a60ce7`).
+- **GPS y mapa de Félix:** integración del commit `101c084`, movimientos con ubicación en el mapa y pruebas (M7.7, `d8cf716`).
+- Pruebas automáticas del proyecto: **170/170** en verde, `ng build` correcto.
+
+### Pendientes
+
+- Pruebas en teléfonos físicos: Bluetooth entre dos teléfonos, escáner QR en vivo y GPS real.
+- Evidencias (capturas y vídeos) y documentación final.
+- Defensa individual de su módulo original (Conectividad + Modo Offline + Integración técnica).
