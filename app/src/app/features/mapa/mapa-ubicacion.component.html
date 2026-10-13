@@ -1,0 +1,47 @@
+<section class="mapa-ubicacion" aria-labelledby="titulo-mapa">
+  <div class="encabezado-mapa">
+    <div>
+      <p class="eyebrow">UBICACIÓN</p>
+      <h2 id="titulo-mapa">Mapa interactivo</h2>
+    </div>
+    @if (coordenadas(); as posicion) {
+      <p class="coordenadas">
+        {{ posicion.latitude | number:'1.5-6' }}, {{ posicion.longitude | number:'1.5-6' }}
+      </p>
+    }
+  </div>
+
+  <div class="controles-mapa">
+    <ion-button size="small" (click)="centrarEnMiUbicacion()" [disabled]="cargandoUbicacion()">
+      <ion-icon name="locate-outline" slot="start"></ion-icon>
+      {{ cargandoUbicacion() ? 'Buscando…' : 'Mi ubicación' }}
+    </ion-button>
+    <ion-button
+      size="small"
+      fill="outline"
+      [class.seguimiento-activo]="siguiendo()"
+      [disabled]="solicitandoSeguimiento()"
+      (click)="alternarSeguimiento()"
+    >
+      <ion-icon name="navigate-outline" slot="start"></ion-icon>
+      {{ solicitandoSeguimiento() ? 'Conectando…' : (siguiendo() ? 'Detener seguimiento' : 'Iniciar seguimiento') }}
+    </ion-button>
+    <ion-button
+      size="small"
+      fill="outline"
+      [class.marcador-activo]="agregandoMarcador()"
+      (click)="alternarAgregarMarcador()"
+    >
+      <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+      {{ agregandoMarcador() ? 'Cancelar marcador' : 'Agregar marcador' }}
+    </ion-button>
+  </div>
+
+  <p class="estado-mapa" aria-live="polite">{{ mensajeEstado() }}</p>
+  <p class="estado-mapa">Movimientos con ubicación en el mapa: {{ movimientosEnMapa() }}</p>
+  @if (error()) {
+    <p class="error-mapa" role="alert">{{ error() }}</p>
+  }
+
+  <div #mapa class="mapa-canvas" role="application" aria-label="Mapa interactivo de OpenStreetMap"></div>
+</section>

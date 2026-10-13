@@ -7,6 +7,7 @@
  *   /tabs/compartir  → Compartir Cerca (BLE)
  *   /tabs/qr         → Escáner QR
  *   /tabs/multimedia → Audio y video locales (U7)
+ *   /tabs/mapa       → GPS, mapa y marcadores (U6)
  *   /tabs/inicio/movimiento/nuevo → formulario de alta (CRUD, U9)
  *   /tabs/inicio/movimiento/:id   → formulario de edición (CRUD, U9)
  * Se deja además el alias /compartir para abrirla directamente, y /nuevo
@@ -63,6 +64,12 @@ export const routes: Routes = [
           import('./features/movimientos/movimientos-form/movimientos-form.component').then(
             (m) => m.MovimientosFormComponent
           ),
+      },
+
+      {
+        path: 'mapa',
+        loadComponent: () =>
+          import('./features/mapa/mapa.page').then((m) => m.MapaPage),
       },
 
       {

@@ -1,0 +1,181 @@
+$grafito: #0a0f14;
+$hielo: #e8f6f5;
+$cian: #22e0d6;
+$azul: #4c7bff;
+$card: #121a22;
+$borde: #1e2a35;
+$coral: #ff5a6e;
+$muted: #7c8b99;
+$mono: 'Martian Mono', ui-monospace, Menlo, monospace;
+$display: 'Unbounded', 'Avenir Next', system-ui, sans-serif;
+
+.mapa-ubicacion {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid $borde;
+  border-radius: 16px;
+  background: $card;
+}
+
+.encabezado-mapa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: $cian;
+  font-family: $mono;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+h2 {
+  margin: 0;
+  color: $hielo;
+  font-family: $display;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.coordenadas,
+.estado-mapa {
+  margin: 0;
+  color: $muted;
+  font-family: $mono;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.coordenadas {
+  overflow-wrap: anywhere;
+}
+
+.controles-mapa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  ion-button {
+    --background: #{$cian};
+    --background-activated: #18b8b0;
+    --color: #{$grafito};
+    --border-color: #{$borde};
+    --border-radius: 8px;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  ion-button[fill='outline'] {
+    --background: transparent;
+    --color: #{$hielo};
+  }
+
+  ion-button.seguimiento-activo {
+    --color: #{$coral};
+    --border-color: #{$coral};
+  }
+
+  ion-button.marcador-activo {
+    --color: #{$cian};
+    --border-color: #{$cian};
+  }
+}
+
+.estado-mapa {
+  margin: 10px 0;
+}
+
+.error-mapa {
+  margin: 8px 0;
+  color: $coral;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mapa-canvas {
+  width: 100%;
+  height: clamp(280px, 48vh, 440px);
+  overflow: hidden;
+  border: 1px solid $borde;
+  border-radius: 10px;
+  background: #dce6e7;
+}
+
+:host ::ng-deep .controla-marcador-usuario {
+  border: 0;
+  background: transparent;
+
+  span {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: $azul;
+    box-shadow: 0 0 0 5px rgb(76 123 255 / 25%), 0 1px 6px rgb(0 0 0 / 50%);
+  }
+}
+
+:host ::ng-deep .controla-marcador-punto {
+  border: 0;
+  background: transparent;
+
+  span {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: $coral;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 50%);
+  }
+}
+
+:host ::ng-deep .controla-marcador-movimiento {
+  border: 0;
+  background: transparent;
+
+  span {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid $grafito;
+    border-radius: 4px;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 6px rgb(0 0 0 / 50%);
+  }
+
+  &.controla-marcador-gasto span {
+    background: $coral;
+  }
+
+  &.controla-marcador-ingreso span {
+    background: $cian;
+  }
+}
+
+:host ::ng-deep .leaflet-container {
+  font-family: system-ui, sans-serif;
+}
+
+:host ::ng-deep .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+@media (max-width: 420px) {
+  .mapa-ubicacion {
+    padding: 12px;
+  }
+
+  .controles-mapa ion-button {
+    flex: 1 1 100%;
+    min-height: 40px;
+  }
+}
